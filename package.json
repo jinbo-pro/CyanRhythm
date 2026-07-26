@@ -1,0 +1,23 @@
+{
+  "name": "local-music",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "纯本地运行桌面音乐播放器（pnpm monorepo：Node+Express 后端 + Vite+Vue3 前端）",
+  "scripts": {
+    "resolve:port": "pnpm --filter @local-music/backend resolve:port",
+    "dev": "pnpm resolve:port && concurrently -n backend,frontend -c blue,green \"pnpm --filter @local-music/backend dev\" \"pnpm --filter @local-music/frontend dev\"",
+    "dev:backend": "pnpm --filter @local-music/backend dev",
+    "dev:frontend": "pnpm --filter @local-music/frontend dev",
+    "build": "node scripts/build.mjs",
+    "start": "pnpm --filter @local-music/backend start",
+    "install:all": "pnpm install"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.0",
+    "esbuild": "^0.25.0"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

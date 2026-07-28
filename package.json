@@ -1,23 +1,41 @@
 {
-  "name": "local-music",
+  "name": "tauri-local-music",
   "private": true,
   "version": "0.1.0",
   "type": "module",
-  "description": "纯本地运行桌面音乐播放器（pnpm monorepo：Node+Express 后端 + Vite+Vue3 前端）",
   "scripts": {
-    "resolve:port": "pnpm --filter @local-music/backend resolve:port",
-    "dev": "pnpm resolve:port && concurrently -n backend,frontend -c blue,green \"pnpm --filter @local-music/backend dev\" \"pnpm --filter @local-music/frontend dev\"",
-    "dev:backend": "pnpm --filter @local-music/backend dev",
-    "dev:frontend": "pnpm --filter @local-music/frontend dev",
-    "build": "node scripts/build.mjs",
-    "start": "pnpm --filter @local-music/backend start",
-    "install:all": "pnpm install"
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "tauri": "tauri",
+    "tauri-dev": "tauri dev",
+    "tauri-build": "tauri build"
+  },
+  "dependencies": {
+    "@element-plus/icons-vue": "^2.3.2",
+    "@tauri-apps/api": "^2",
+    "@tauri-apps/plugin-fs": "~2.5.1",
+    "@tauri-apps/plugin-opener": "^2",
+    "@vueuse/core": "^11.3.0",
+    "element-plus": "^2.14.3",
+    "howler": "^2.2.4",
+    "idb": "^8.0.0",
+    "mitt": "^3.0.1",
+    "mousetrap": "^1.6.5",
+    "pinia": "^2.3.0",
+    "pixi.js": "^8.19.0",
+    "vue": "^3.5.13",
+    "vue-router": "^4.5.0"
   },
   "devDependencies": {
-    "concurrently": "^9.1.0",
-    "esbuild": "^0.25.0"
-  },
-  "engines": {
-    "node": ">=20"
+    "@tailwindcss/vite": "^4.3.3",
+    "@tauri-apps/cli": "^2",
+    "@vitejs/plugin-vue": "^6.0.8",
+    "@vitejs/plugin-vue-jsx": "^5.1.6",
+    "tailwindcss": "^4.3.3",
+    "unplugin-auto-import": "^21.0.0",
+    "unplugin-vue-components": "^32.1.0",
+    "vite": "^8.1.5",
+    "vite-svg-loader": "^5.1.1"
   }
 }

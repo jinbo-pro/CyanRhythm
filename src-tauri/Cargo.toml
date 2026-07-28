@@ -1,0 +1,54 @@
+[package]
+name = "tauri-local-music"
+version = "0.1.0"
+description = "A Tauri App"
+authors = ["you"]
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[lib]
+# The `_lib` suffix may seem redundant but it is necessary
+# to make the lib name unique and wouldn't conflict with the bin name.
+# This seems to be only an issue on Windows, see https://github.com/rust-lang/cargo/issues/8519
+name = "tauri_local_music_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = ["protocol-asset"] }
+tauri-plugin-opener = "2"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+tauri-plugin-fs = "2"
+# 音频元数据解析（MP3/FLAC/M4A/WAV/AAC 等）
+lofty = "0.22"
+# Base64 编解码（封面图片转 data URL）
+base64 = "0.22"
+# SHA1 哈希（生成歌曲稳定 ID）
+sha1 = "0.10"
+# 递归目录遍历
+walkdir = "2"
+# 系统目录获取（主目录、音乐目录、AppData）
+dirs = "5"
+# SHA256 哈希（同步加密密钥派生）
+sha2 = "0.10"
+# AES-128-GCM 加密（数据同步加密）
+aes-gcm = "0.10"
+# 歌词在线获取（lrclib API）
+reqwest = { version = "0.12", features = ["json", "rustls-tls"], default-features = false }
+
+# 发布构建体积优化配置
+[profile.release]
+# 按体积优化（"z" 最小体积，"s" 在体积和速度间折中）
+opt-level = "z"
+# 开启全量链接时优化，跨 crate 消除无用代码
+lto = true
+# 使用单个代码生成单元，提升优化效果（编译会变慢）
+codegen-units = 1
+# panic 时直接终止，去掉栈展开代码
+panic = "abort"
+# 自动剥离调试符号
+strip = true

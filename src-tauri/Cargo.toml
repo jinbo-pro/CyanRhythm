@@ -1,5 +1,5 @@
 [package]
-name = "tauri-local-music"
+name = "CyanRhythm"
 version = "0.1.0"
 description = "A Tauri App"
 authors = ["you"]
@@ -37,8 +37,8 @@ dirs = "5"
 sha2 = "0.10"
 # AES-128-GCM 加密（数据同步加密）
 aes-gcm = "0.10"
-# 歌词在线获取（lrclib API）
-reqwest = { version = "0.12", features = ["json", "rustls-tls"], default-features = false }
+# 歌词在线获取（lrclib API）— 极简同步 HTTP 客户端，tls + json 解析
+ureq = { version = "2", features = ["tls", "json"], default-features = false }
 
 # 发布构建体积优化配置
 [profile.release]

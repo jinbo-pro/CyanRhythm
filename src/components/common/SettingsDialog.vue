@@ -321,6 +321,15 @@ function onRefresh() {
               </div>
               <el-switch v-model="settings.showIndex" @change="settings.persist()" />
             </div>
+            <div class="flex items-center justify-between gap-4">
+              <div class="min-w-0">
+                <div class="text-sm font-medium">像素图标</div>
+                <div class="mt-0.5 text-xs text-neutral-400">
+                  无封面的歌曲和专辑使用名称生成像素图标
+                </div>
+              </div>
+              <el-switch v-model="settings.pixelIcon" @change="settings.persist()" />
+            </div>
           </div>
 
           <el-divider class="!my-2" />

@@ -5,6 +5,7 @@ import { usePlaylistStore } from '../stores/playlist.js'
 import { useLibraryStore } from '../stores/library.js'
 import { usePlayerStore } from '../stores/player.js'
 import SongTable from '../components/song/SongTable.vue'
+import PlaylistIcon from '../components/common/PlaylistIcon.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -49,10 +50,7 @@ async function removePlaylist() {
           <div
             class="flex h-28 w-28 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-itunes-blue/70 to-purple-500/70 text-white shadow-lg"
           >
-            <el-icon :size="48">
-              <el-icon v-if="playlist.builtin" class="!text-red-500"><StarFilled /></el-icon>
-              <List v-else />
-            </el-icon>
+            <PlaylistIcon :playlist="playlist" :size="48" />
           </div>
           <div class="min-w-0 flex-1">
             <p class="text-xs font-medium uppercase tracking-wide text-neutral-400">播放列表</p>

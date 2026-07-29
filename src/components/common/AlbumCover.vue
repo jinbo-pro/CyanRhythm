@@ -1,6 +1,10 @@
 <script setup>
 import { ref, watch, computed } from 'vue'
 import { coverUrl } from '../../api/index.js'
+import { useSettingsStore } from '../../stores/settings.js'
+import { generateIdenticon } from '../../utils/identicon.js'
+
+const settings = useSettingsStore()
 
 const props = defineProps({
   song: { type: Object, default: null },
@@ -44,6 +48,14 @@ const radiusClass = computed(
       full: 'rounded-full',
     }[props.rounded] || 'rounded-md')
 )
+
+/** 像素图标模式：无封面时用名称生成 identicon */
+const pixelSrc = computed(() => {
+  if (!settings.pixelIcon) return null
+  const { album, title, artist } = props.song
+  const text = `${album}, ${title}, ${artist}`
+  return generateIdenticon(text)
+})
 </script>
 
 <template>
@@ -59,6 +71,13 @@ const radiusClass = computed(
       class="h-full w-full object-cover"
       loading="lazy"
       @error="failed = true"
+    />
+    <img
+      v-else-if="pixelSrc"
+      :src="pixelSrc"
+      alt="cover"
+      class="h-full w-full"
+      draggable="false"
     />
     <el-icon v-else :size="Number(size) * 0.45"><Headset /></el-icon>
   </div>

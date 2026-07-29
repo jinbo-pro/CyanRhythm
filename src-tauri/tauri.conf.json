@@ -1,8 +1,8 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "tauri-local-music",
+  "productName": "CyanRhythm",
   "version": "0.1.0",
-  "identifier": "com.lijin.tauri-local-music",
+  "identifier": "CyanRhythm",
   "build": {
     "beforeDevCommand": "pnpm dev",
     "devUrl": "http://localhost:1420",
@@ -13,10 +13,10 @@
     "windows": [
       {
         "label": "main",
-        "title": "tauri-local-music",
-        "width": 800,
-        "height": 600,
-        "visible": false,
+        "title": "青律",
+        "width": 1200,
+        "height": 800,
+        "maximized": true,
         "center": true
       }
     ],
@@ -33,9 +33,6 @@
     "targets": "all",
     "icon": [
       "icons/32x32.png",
-      "icons/128x128.png",
-      "icons/128x128@2x.png",
-      "icons/icon.icns",
       "icons/icon.ico"
     ]
   }

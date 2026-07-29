@@ -51,55 +51,55 @@ fn build_result(source: &str, raw: String) -> LyricsResult {
     }
 }
 
+/// 构建 ureq Agent（复用连接池 + 超时）
+fn build_agent() -> ureq::Agent {
+    ureq::AgentBuilder::new()
+        .timeout(Duration::from_secs(8))
+        .build()
+}
+
 /// 3. 在线 lrclib（精确匹配）
-async fn fetch_online(
+fn fetch_online(
+    agent: &ureq::Agent,
     title: &str,
     artist: &str,
     album: &str,
     duration: u64,
 ) -> Option<LyricsResult> {
-    let client = reqwest::Client::builder()
-        .user_agent("tauri-local-music/0.1")
-        .timeout(Duration::from_secs(8))
-        .build()
-        .ok()?;
-
     // 先尝试 /get 精确匹配
-    let resp = client
-        .get(format!("{}/get", LRCLIB_BASE))
-        .query(&[
-            ("track_name", title),
-            ("artist_name", artist),
-            ("album_name", album),
-            ("duration", &duration.to_string()),
-        ])
-        .send()
-        .await
-        .ok()?;
+    let resp = agent
+        .get(&format!("{}/get", LRCLIB_BASE))
+        .query("track_name", title)
+        .query("artist_name", artist)
+        .query("album_name", album)
+        .query("duration", &duration.to_string())
+        .call();
 
-    if resp.status() == reqwest::StatusCode::NOT_FOUND {
-        // 降级为 search
-        return search_online(&client, title, artist).await;
+    match resp {
+        Ok(response) => {
+            let json: serde_json::Value = response.into_json().ok()?;
+            Some(parse_lrclib_json(json, "online"))
+        }
+        Err(ureq::Error::Status(404, _)) => {
+            // 降级为 search
+            search_online(agent, title, artist)
+        }
+        Err(_) => None,
     }
-
-    let json: serde_json::Value = resp.json().await.ok()?;
-    Some(parse_lrclib_json(json, "online"))
 }
 
 /// /get 未命中时的降级搜索（取第一条有 syncedLyrics 的结果）
-async fn search_online(
-    client: &reqwest::Client,
-    title: &str,
-    artist: &str,
-) -> Option<LyricsResult> {
-    let resp = client
-        .get(format!("{}/search", LRCLIB_BASE))
-        .query(&[("track_name", title), ("artist_name", artist)])
-        .send()
-        .await
-        .ok()?;
+fn search_online(agent: &ureq::Agent, title: &str, artist: &str) -> Option<LyricsResult> {
+    let resp = agent
+        .get(&format!("{}/search", LRCLIB_BASE))
+        .query("track_name", title)
+        .query("artist_name", artist)
+        .call();
 
-    let arr: Vec<serde_json::Value> = resp.json().await.ok()?;
+    let arr: Vec<serde_json::Value> = match resp {
+        Ok(r) => r.into_json().ok()?,
+        Err(_) => return None,
+    };
     if arr.is_empty() {
         return None;
     }
@@ -133,7 +133,7 @@ fn parse_lrclib_json(json: serde_json::Value, source: &str) -> LyricsResult {
 }
 
 /// 组合入口：按优先级依次尝试 内嵌 → 本地 .lrc → 在线 lrclib
-pub async fn get_lyrics(
+pub fn get_lyrics(
     file_path: &str,
     title: &str,
     artist: &str,
@@ -149,7 +149,8 @@ pub async fn get_lyrics(
         return r;
     }
     // 3. 在线 lrclib
-    if let Some(r) = fetch_online(title, artist, album, duration).await {
+    let agent = build_agent();
+    if let Some(r) = fetch_online(&agent, title, artist, album, duration) {
         return r;
     }
 

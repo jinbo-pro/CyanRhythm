@@ -6,6 +6,7 @@ import { useSettingsStore, PLAY_MODES } from './settings.js'
 import { useLibraryStore } from './library.js'
 import { useStatsStore } from './stats.js'
 import { loadProgress, saveProgress } from '../db/repositories/progress.js'
+import { connectAudioNode } from '../composables/useAudioAnalyser.js'
 
 // 修复 Web Audio API CORS 限制：
 // createMediaElementSource 要求音频资源通过 CORS 校验，否则输出静音
@@ -79,6 +80,11 @@ export const usePlayerStore = defineStore('player', {
       howl.on('play', () => {
         this.isPlaying = true
         this._startRaf()
+        // 接入 WebAudio 图（频谱分析 + EQ 均衡器）
+        // 必须在 play 后调用：此时 audio 元素已创建
+        // 之前仅在 PlayerDetail 中调用，导致未打开详情页时 EQ 不生效
+        const node = this.getCurrentAudioNode()
+        if (node) connectAudioNode(node)
       })
       howl.on('pause', () => {
         this.isPlaying = false

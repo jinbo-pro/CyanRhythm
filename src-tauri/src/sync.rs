@@ -10,7 +10,7 @@ use crate::models::{SyncBackupInfo, SyncMeta, SyncUploadResult};
 /// 获取同步数据存储根目录（AppData 下的应用专属目录）
 fn get_data_root() -> Result<PathBuf, String> {
     let base = dirs::data_dir().ok_or_else(|| "无法获取应用数据目录".to_string())?;
-    Ok(base.join("com.lijin.tauri-local-music").join("sync-data"))
+    Ok(base.join("CyanRhythm").join("sync-data"))
 }
 
 /// 从密码派生 AES-128-GCM 的 key 和 iv（与 Node.js 后端完全兼容）：

@@ -2,6 +2,7 @@
 import { ref } from 'vue'
 import { RouterLink, useRouter } from 'vue-router'
 import PlaylistEditor from '../common/PlaylistEditor.vue'
+import PlaylistIcon from '../common/PlaylistIcon.vue'
 import EqDialog from '../common/EqDialog.vue'
 import { usePlaylistStore } from '../../stores/playlist.js'
 import { useSettingsStore } from '../../stores/settings.js'
@@ -37,11 +38,11 @@ function openEdit(pl) {
   editorOpen.value = true
 }
 
-async function onSubmit({ name, sort }) {
+async function onSubmit({ name, sort, icon }) {
   if (editingPlaylist.value) {
-    await playlistStore.update(editingPlaylist.value.id, { name, sort })
+    await playlistStore.update(editingPlaylist.value.id, { name, sort, icon })
   } else {
-    const pl = await playlistStore.create(name, sort)
+    const pl = await playlistStore.create(name, sort, icon)
     router.push(`/playlist/${pl.id}`)
   }
 }
@@ -101,6 +102,7 @@ function songCount(pl) {
         <div
           v-for="pl in playlistStore.playlists"
           :key="pl.id"
+          :data-playlist-id="pl.id"
           class="group flex items-center rounded-md hover:bg-neutral-200/70 dark:hover:bg-neutral-800"
         >
           <RouterLink
@@ -108,10 +110,7 @@ function songCount(pl) {
             class="flex min-w-0 flex-1 items-center gap-2.5 px-2 py-1.5 text-sm text-neutral-700 dark:text-neutral-200"
             active-class="text-itunes-blue"
           >
-            <el-icon :size="16" class="shrink-0 text-neutral-400">
-              <el-icon v-if="pl.builtin" class="!text-red-500"><StarFilled /></el-icon>
-              <List v-else />
-            </el-icon>
+            <PlaylistIcon :playlist="pl" :size="16" />
             <span class="truncate">{{ pl.name }}</span>
           </RouterLink>
 

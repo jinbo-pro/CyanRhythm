@@ -1,5 +1,5 @@
 <script setup lang="jsx">
-import { computed, ref } from 'vue'
+import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { useDebounceFn } from '@vueuse/core'
 import { ElButton, ElIcon } from 'element-plus'
 import { Microphone, Histogram, Delete, Plus, StarFilled, Star } from '@element-plus/icons-vue'
@@ -9,6 +9,7 @@ import { usePlayerStore } from '../../stores/player.js'
 import { useSettingsStore } from '../../stores/settings.js'
 import { usePlaylistStore } from '../../stores/playlist.js'
 import { formatTime } from '../../composables/usePlayer.js'
+import { eventBus, EVENTS } from '../../utils/eventBus.js'
 
 const props = defineProps({
   songs: { type: Array, default: () => [] },
@@ -21,6 +22,9 @@ const emit = defineEmits(['remove'])
 
 const player = usePlayerStore()
 const playlistStore = usePlaylistStore()
+
+/** el-table-v2 实例，用于调用 scrollToRow */
+const tableRef = ref(null)
 
 /** 单例弹层，替代每行一个 el-dropdown */
 const addMenuRef = ref(null)
@@ -46,6 +50,19 @@ const handleRowClick = useDebounceFn(({ rowData }) => {
 const rowEventHandlers = {
   onClick: handleRowClick,
 }
+
+/** 滚动到当前播放歌曲所在行（定位） */
+function locateCurrent() {
+  if (!player.currentSong) return
+  const index = props.songs.findIndex((s) => s.id === player.currentSong.id)
+  if (index >= 0) {
+    // 'center' 让当前歌曲尽可能停在可视区中间，定位更直观
+    tableRef.value && tableRef.value.scrollToRow(index, 'center')
+  }
+}
+
+onMounted(() => eventBus.on(EVENTS.LOCATE_CURRENT, locateCurrent))
+onUnmounted(() => eventBus.off(EVENTS.LOCATE_CURRENT, locateCurrent))
 
 /** el-table-v2 列定义（JSX 渲染，虚拟滚动下只渲染可视区行） */
 const columns = computed(() => {
@@ -183,6 +200,7 @@ const columns = computed(() => {
     <el-auto-resizer>
       <template #default="{ height, width }">
         <el-table-v2
+          ref="tableRef"
           :columns="columns"
           :data="songs"
           :width="width"

@@ -232,14 +232,14 @@ fn get_cover_data_url(file_path: String) -> Result<Option<String>, String> {
 
 /// 获取歌词（按 内嵌 → 本地 .lrc → 在线 lrclib 优先级获取）
 #[tauri::command]
-async fn get_lyrics(
+fn get_lyrics(
     file_path: String,
     title: String,
     artist: String,
     album: String,
     duration: u64,
 ) -> Result<LyricsResult, String> {
-    Ok(lyrics::get_lyrics(&file_path, &title, &artist, &album, duration).await)
+    Ok(lyrics::get_lyrics(&file_path, &title, &artist, &album, duration))
 }
 
 // ── 数据同步 ──

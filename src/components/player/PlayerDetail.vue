@@ -17,7 +17,7 @@ const emit = defineEmits(['update:modelValue'])
 const player = usePlayerStore()
 const settings = useSettingsStore()
 
-const canvasRef = ref(null)
+const visualizerRef = ref(null)
 let visualizer = null
 
 const hasSong = computed(() => !!player.currentSong)
@@ -84,15 +84,14 @@ function connectAnalyser() {
 onMounted(async () => {
   window.addEventListener('keydown', onKeydown)
   await nextTick()
-  if (canvasRef.value) {
-    visualizer = new AudioVisualizer(canvasRef.value, {
-      discRadius: 110,
-      maxBarLen: 65,
-      barCount: 64,
-    })
+  if (visualizerRef.value) {
     try {
-      await visualizer.init()
-      visualizer.updateCover(coverSrc.value)
+      visualizer = new AudioVisualizer(visualizerRef.value, {
+        discRadius: 110,
+        maxBarLen: 65,
+        barCount: 64,
+      })
+      visualizer.setCover(coverSrc.value)
       visualizer.setPlaying(player.isPlaying)
     } catch (e) {
       console.error('[PlayerDetail] 可视化初始化失败:', e)
@@ -111,7 +110,7 @@ watch(
 
 // 封面加载完成后更新可视化封面（coverSrc 为异步加载）
 watch(coverSrc, (val) => {
-  if (visualizer) visualizer.updateCover(val)
+  if (visualizer) visualizer.setCover(val)
 })
 
 // 播放/暂停状态变化：控制唱片旋转
@@ -161,7 +160,7 @@ onBeforeUnmount(() => {
     <main class="relative z-[2] flex min-h-0 flex-1">
       <!-- 左侧：可视化 + 歌曲信息 -->
       <section class="flex min-w-0 flex-1 flex-col items-center justify-center p-4">
-        <div ref="canvasRef" class="flex min-h-[280px] w-full flex-1 items-center justify-center"></div>
+        <div ref="visualizerRef" class="flex min-h-[280px] w-full flex-1 items-center justify-center"></div>
         <div v-if="hasSong" class="mt-4 shrink-0 text-center">
           <h2
             class="m-0 max-w-[480px] overflow-hidden text-ellipsis whitespace-nowrap text-[22px] font-semibold text-white"
@@ -209,14 +208,8 @@ onBeforeUnmount(() => {
             </el-button>
           </el-tooltip>
 
-          <el-button
-            type="primary"
-            circle
-            :disabled="!hasSong"
-            class="!h-12 !w-12"
-            @click="player.toggle()"
-          >
-            <el-icon :size="22">
+          <el-button text circle :disabled="!hasSong" @click="player.toggle()">
+            <el-icon :size="24">
               <VideoPause v-if="player.isPlaying" />
               <VideoPlay v-else />
             </el-icon>
@@ -280,13 +273,13 @@ onBeforeUnmount(() => {
   color: rgba(255, 255, 255, 0.8) !important;
 }
 .close-btn:hover {
-  color: #fff !important;
+  color: #9b9393 !important;
 }
 .ctrl-btn {
   color: rgba(255, 255, 255, 0.7) !important;
 }
 .ctrl-btn:hover {
-  color: #fff !important;
+  color: #9b9393 !important;
 }
 .ctrl-btn.is-active {
   color: var(--color-itunes-blue) !important;

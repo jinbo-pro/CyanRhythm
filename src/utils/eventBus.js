@@ -8,4 +8,5 @@ export const eventBus = mitt()
 export const EVENTS = {
   OPEN_SETTINGS: 'open-settings',
   OPEN_IMPORT: 'open-import',
+  LOCATE_CURRENT: 'locate-current',
 }

@@ -5,6 +5,7 @@ import { useSettingsStore, PLAY_MODES, PLAY_MODE_INFO } from '../../stores/setti
 import AlbumCover from '../common/AlbumCover.vue'
 import PlayModeIcon from '../common/PlayModeIcon.vue'
 import { formatTime } from '../../composables/usePlayer.js'
+import { eventBus, EVENTS } from '../../utils/eventBus.js'
 
 const emit = defineEmits(['open-detail'])
 
@@ -30,6 +31,11 @@ function toggleMute() {
 }
 function cycleMode() {
   settings.cyclePlayMode()
+}
+
+/** 定位到当前播放歌曲所在行 */
+function locateCurrent() {
+  eventBus.emit(EVENTS.LOCATE_CURRENT)
 }
 </script>
 
@@ -81,6 +87,12 @@ function cycleMode() {
         <el-tooltip content="下一曲" placement="top">
           <el-button text circle :disabled="!hasSong" @click="player.next()">
             <el-icon :size="22"><DArrowRight /></el-icon>
+          </el-button>
+        </el-tooltip>
+
+        <el-tooltip content="定位到当前播放" placement="top">
+          <el-button text circle :disabled="!hasSong" @click="locateCurrent">
+            <el-icon :size="18"><Aim /></el-icon>
           </el-button>
         </el-tooltip>
 

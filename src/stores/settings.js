@@ -52,6 +52,7 @@ export const useSettingsStore = defineStore('settings', {
     showCover: true, // 是否显示封面缩略图
     showAlbum: true, // 是否显示专辑列
     showIndex: true, // 是否显示序号列
+    pixelIcon: false, // 无封面时是否用名称生成像素图标
     // 快捷键配置：动作 -> mousetrap 组合字符串（如 'space'、'ctrl+right'）
     shortcuts: { ...DEFAULT_SHORTCUTS },
     // EQ 均衡器配置
@@ -70,6 +71,7 @@ export const useSettingsStore = defineStore('settings', {
       this.showCover = data.showCover ?? true
       this.showAlbum = data.showAlbum ?? true
       this.showIndex = data.showIndex ?? true
+      this.pixelIcon = data.pixelIcon ?? false
       // 合并快捷键：以保存值为准，缺失项回退到默认
       this.shortcuts = { ...DEFAULT_SHORTCUTS, ...(data.shortcuts || {}) }
       // EQ 均衡器配置
@@ -94,6 +96,7 @@ export const useSettingsStore = defineStore('settings', {
           showCover: this.showCover,
           showAlbum: this.showAlbum,
           showIndex: this.showIndex,
+          pixelIcon: this.pixelIcon,
           shortcuts: { ...this.shortcuts },
           eqEnabled: this.eqEnabled,
           eqGains: [...this.eqGains],

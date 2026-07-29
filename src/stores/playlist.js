@@ -1,4 +1,5 @@
 import { defineStore } from 'pinia'
+import { toRaw } from 'vue'
 import {
   getAllPlaylists,
   savePlaylist,
@@ -35,6 +36,18 @@ export const usePlaylistStore = defineStore('playlist', {
     },
   },
   actions: {
+    /**
+     * 统一持久化方法：剥离 Vue 响应式代理后写入 IndexedDB
+     * 必须先 toRaw 脱壳，否则结构化克隆 Proxy 会抛 'could not be cloned'
+     */
+    async _persist(pl) {
+      const raw = toRaw(pl)
+      await savePlaylist({
+        ...raw,
+        songIds: [...raw.songIds],
+        icon: raw.icon ? { ...toRaw(raw.icon) } : null,
+      })
+    },
     /** 将当前 playlists 按 sort 升序排序（返回新数组引用触发响应式更新） */
     _resort() {
       this.playlists = [...this.playlists].sort((a, b) => {
@@ -69,33 +82,35 @@ export const usePlaylistStore = defineStore('playlist', {
       await savePlaylist({ ...fav })
       this.playlists.push(fav)
     },
-    /** 生成播放列表 id */
+    /** 生成播放列表 id（Tauri WebView 安全上下文，crypto.randomUUID 可用） */
     _genId() {
-      return 'pl_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6)
+      return 'pl_' + crypto.randomUUID()
     },
     /**
      * 新建播放列表
      * @param {string} name 名称（必填）
      * @param {number} [sort] 排序值，不传则取 nextSort（追加到末尾）
+     * @param {{type:string, value:string}|null} [icon] 图标配置
      */
-    async create(name, sort) {
+    async create(name, sort, icon) {
       const sortVal = typeof sort === 'number' ? sort : this.nextSort
       const pl = {
         id: this._genId(),
         name,
+        icon: icon || null,
         songIds: [],
         createdAt: Date.now(),
         sort: sortVal,
       }
-      await savePlaylist(pl)
+      await savePlaylist({ ...pl })
       this.playlists.push(pl)
       this._resort()
       return pl
     },
     /**
-     * 更新播放列表（名称 / 排序）—— 内置列表受保护，不可更新
+     * 更新播放列表（名称 / 排序 / 图标）—— 内置列表受保护，不可更新
      * @param {string} id
-     * @param {{name?:string, sort?:number}} patch
+     * @param {{name?:string, sort?:number, icon?:object|null}} patch
      */
     async update(id, patch) {
       if (id === FAVORITES_ID) return
@@ -103,7 +118,8 @@ export const usePlaylistStore = defineStore('playlist', {
       if (!pl) return
       if (typeof patch.name === 'string') pl.name = patch.name
       if (typeof patch.sort === 'number') pl.sort = patch.sort
-      await savePlaylist({ ...pl, songIds: [...pl.songIds] })
+      if (patch.icon !== undefined) pl.icon = patch.icon
+      await this._persist(pl)
       this._resort()
     },
     /** 删除播放列表 —— 内置列表受保护，不可删除 */
@@ -118,7 +134,7 @@ export const usePlaylistStore = defineStore('playlist', {
       if (!pl) return
       if (!pl.songIds.includes(songId)) {
         pl.songIds.push(songId)
-        await savePlaylist({ ...pl, songIds: [...pl.songIds] })
+        await this._persist(pl)
       }
     },
     /** 从播放列表移除歌曲 */
@@ -126,7 +142,7 @@ export const usePlaylistStore = defineStore('playlist', {
       const pl = this.playlists.find((p) => p.id === id)
       if (!pl) return
       pl.songIds = pl.songIds.filter((sid) => sid !== songId)
-      await savePlaylist({ ...pl, songIds: [...pl.songIds] })
+      await this._persist(pl)
     },
     getPlaylist(id) {
       return this.playlists.find((p) => p.id === id)
@@ -146,7 +162,7 @@ export const usePlaylistStore = defineStore('playlist', {
       } else {
         fav.songIds.push(songId)
       }
-      await savePlaylist({ ...fav, songIds: [...fav.songIds] })
+      await this._persist(fav)
     },
   },
 })

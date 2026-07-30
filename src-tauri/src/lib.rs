@@ -270,6 +270,41 @@ fn get_cover_data_url(file_path: String) -> Result<Option<String>, String> {
     Ok(metadata::get_cover_data_url(&file_path))
 }
 
+/// 仅获取内嵌歌词（不触发在线请求，供编辑器加载当前歌词）
+#[tauri::command]
+fn get_embedded_lyrics(file_path: String) -> Result<Option<String>, String> {
+    Ok(metadata::get_embedded_lyrics(&file_path))
+}
+
+// ── 元数据编辑（写入标签） ──
+
+/// 更新音频文件元数据（标题、艺术家、专辑、专辑艺术家、年份、歌词、封面）
+///
+/// 仅更新传入的字段，null 字段保持原值。写入成功后返回重新解析的 Song。
+#[tauri::command]
+fn update_audio_metadata(
+    file_path: String,
+    title: Option<String>,
+    artist: Option<String>,
+    album: Option<String>,
+    album_artist: Option<String>,
+    year: Option<String>,
+    lyrics: Option<String>,
+    cover_base64: Option<String>,
+) -> Result<models::Song, String> {
+    let path = std::path::PathBuf::from(&file_path);
+    metadata::update_audio_metadata(
+        &path,
+        title.as_deref(),
+        artist.as_deref(),
+        album.as_deref(),
+        album_artist.as_deref(),
+        year.as_deref(),
+        lyrics.as_deref(),
+        cover_base64.as_deref(),
+    )
+}
+
 // ── 歌词获取 ──
 
 /// 获取歌词（按 内嵌 → 本地 .lrc → 在线 lrclib 优先级获取）
@@ -350,7 +385,9 @@ pub fn run() {
             scan_library_stream,
             cancel_scan,
             get_file_info,
+            update_audio_metadata,
             get_cover_data_url,
+            get_embedded_lyrics,
             get_lyrics,
             sync_upload,
             sync_download,

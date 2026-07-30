@@ -6,8 +6,10 @@ import { AudioVisualizer } from './AudioVisualizer.js'
 import { connectAudioNode } from '../../composables/useAudioAnalyser.js'
 import { coverUrl } from '../../api/index.js'
 import { formatTime } from '../../composables/usePlayer.js'
+import { useLibraryStore } from '../../stores/library.js'
 import PlayModeIcon from '../common/PlayModeIcon.vue'
 import SongDetailDialog from '../common/SongDetailDialog.vue'
+import MetadataEditor from '../common/MetadataEditor.vue'
 import LyricsPanel from './LyricsPanel.vue'
 
 const props = defineProps({
@@ -17,6 +19,7 @@ const emit = defineEmits(['update:modelValue'])
 
 const player = usePlayerStore()
 const settings = useSettingsStore()
+const library = useLibraryStore()
 
 const visualizerRef = ref(null)
 let visualizer = null
@@ -81,6 +84,23 @@ const detailVisible = ref(false)
 function openDetail() {
   if (!player.currentSong) return
   detailVisible.value = true
+}
+
+// 元数据编辑弹窗
+const editorVisible = ref(false)
+function openEditor() {
+  if (!player.currentSong) return
+  editorVisible.value = true
+}
+
+/** 编辑保存后：更新 library + player，并刷新封面预览 */
+async function onMetadataSaved(updatedSong) {
+  await library.updateSong(updatedSong)
+  if (player.currentSong?.id === updatedSong.id) {
+    player.currentSong = updatedSong
+    // 封面 watcher 以 id 为依赖，id 不变不会重走，需手动刷新
+    coverSrc.value = updatedSong.cover || ''
+  }
 }
 
 /** 将当前 Howl 的 audio 元素接入 WebAudio 分析器 */
@@ -197,6 +217,12 @@ onBeforeUnmount(() => {
       <!-- 中：播放控制 + 进度 -->
       <div class="flex flex-1 flex-col items-center gap-1.5">
         <div class="flex items-center gap-5">
+          <el-tooltip content="编辑信息" placement="top">
+            <el-button text circle class="ctrl-btn" :disabled="!hasSong" @click="openEditor">
+              <el-icon :size="18"><EditPen /></el-icon>
+            </el-button>
+          </el-tooltip>
+
           <el-tooltip :content="modeLabel" placement="top">
             <el-button
               text
@@ -281,6 +307,9 @@ onBeforeUnmount(() => {
 
     <!-- 歌曲详情弹窗（独立组件，打开时实时读取文件信息） -->
     <SongDetailDialog v-model="detailVisible" :song="player.currentSong" />
+
+    <!-- 元数据编辑弹窗 -->
+    <MetadataEditor v-model="editorVisible" :song="player.currentSong" @saved="onMetadataSaved" />
   </div>
 </template>
 

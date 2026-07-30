@@ -105,6 +105,19 @@ export async function coverUrl(filePath) {
   }
 }
 
+/**
+ * 仅获取内嵌歌词（不触发在线请求，供编辑器加载当前歌词）
+ * @param {string} filePath 音频文件的绝对路径
+ * @returns {Promise<string|null>} 歌词文本或 null
+ */
+export async function getEmbeddedLyrics(filePath) {
+  try {
+    return await invoke('get_embedded_lyrics', { filePath })
+  } catch {
+    return null
+  }
+}
+
 // ═══════════════════════════════════════════════
 //  文件详情（按需实时读取）
 // ═══════════════════════════════════════════════
@@ -117,6 +130,28 @@ export async function coverUrl(filePath) {
  */
 export function getFileInfo(filePath) {
   return invoke('get_file_info', { filePath })
+}
+
+// ═══════════════════════════════════════════════
+//  元数据编辑（写入标签）
+// ═══════════════════════════════════════════════
+
+/**
+ * 更新音频文件元数据（基于 lofty 写入标签）
+ * 仅更新传入的字段，null 字段保持原值。写入成功后返回重新解析的 Song。
+ * @param {object} params 更新参数
+ * @param {string} params.filePath 音频文件绝对路径
+ * @param {string|null} [params.title]
+ * @param {string|null} [params.artist]
+ * @param {string|null} [params.album]
+ * @param {string|null} [params.albumArtist]
+ * @param {string|null} [params.year]
+ * @param {string|null} [params.lyrics]
+ * @param {string|null} [params.coverBase64] data URL 或纯 base64
+ * @returns {Promise<object>} 重新解析后的 Song
+ */
+export function updateMetadata(params) {
+  return invoke('update_audio_metadata', params)
 }
 
 // ═══════════════════════════════════════════════

@@ -157,6 +157,18 @@ export const useLibraryStore = defineStore('library', {
       await this._persist()
     },
     /**
+     * 更新单首歌曲的元数据（编辑后回写）
+     * @param {object} updatedSong 包含最新字段的歌曲对象（按 id 匹配替换）
+     */
+    async updateSong(updatedSong) {
+      const idx = this.songs.findIndex((s) => s.id === updatedSong.id)
+      if (idx >= 0) {
+        this.songs[idx] = updatedSong
+        this.songs = [...this.songs]
+        await this._persist()
+      }
+    },
+    /**
      * 替换指定目录的歌曲：先删除该目录下的旧歌曲，再合并新歌曲（按 id 去重）。
      * 用于「更新目录」——重新扫描后用新结果覆盖该目录的歌曲。
      */

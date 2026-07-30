@@ -1,10 +1,12 @@
 use std::path::Path;
 
 use base64::{engine::general_purpose, Engine as _};
+use lofty::config::WriteOptions;
 use lofty::file::AudioFile;
+use lofty::picture::{MimeType, Picture, PictureType};
 use lofty::prelude::*;
 use lofty::probe::Probe;
-use lofty::tag::ItemKey;
+use lofty::tag::{ItemKey, Tag};
 use sha1::{Digest, Sha1};
 
 use crate::models::Song;
@@ -148,4 +150,103 @@ pub fn get_embedded_lyrics(file_path: &str) -> Option<String> {
         .value()
         .text()
         .map(|s| s.to_string())
+}
+
+/// 更新音频文件元数据（基于 lofty 写入标签）并返回重新解析后的 Song
+///
+/// 仅更新非 None 的字段，None 字段保持原值不变。
+/// `cover_base64` 接受 data URL（`data:image/jpeg;base64,...`）或纯 base64。
+pub fn update_audio_metadata(
+    abs_path: &Path,
+    title: Option<&str>,
+    artist: Option<&str>,
+    album: Option<&str>,
+    album_artist: Option<&str>,
+    year: Option<&str>,
+    lyrics: Option<&str>,
+    cover_base64: Option<&str>,
+) -> Result<Song, String> {
+    // 1. 读取现有标签
+    let mut tagged_file = Probe::open(abs_path)
+        .map_err(|e| format!("打开文件失败：{}", e))?
+        .read()
+        .map_err(|e| format!("读取标签失败：{}", e))?;
+
+    // 2. 若文件无主标签则按文件类型创建一个
+    if tagged_file.primary_tag().is_none() {
+        let tag_type = tagged_file.primary_tag_type();
+        tagged_file.insert_tag(Tag::new(tag_type));
+    }
+
+    let tag = tagged_file
+        .primary_tag_mut()
+        .ok_or_else(|| "文件不支持写入标签".to_string())?;
+
+    // 3. 更新文本字段（仅更新非 None 的字段）
+    if let Some(v) = title {
+        tag.set_title(v.to_string());
+    }
+    if let Some(v) = artist {
+        tag.set_artist(v.to_string());
+    }
+    if let Some(v) = album {
+        tag.set_album(v.to_string());
+    }
+    if let Some(v) = album_artist {
+        tag.insert_text(ItemKey::AlbumArtist, v.to_string());
+    }
+    if let Some(v) = year {
+        tag.insert_text(ItemKey::Year, v.to_string());
+    }
+    if let Some(v) = lyrics {
+        tag.insert_text(ItemKey::Lyrics, v.to_string());
+    }
+
+    // 4. 更新封面：先移除原有封面再写入新封面
+    if let Some(data_url) = cover_base64 {
+        let (mime, data) = decode_data_url(data_url);
+        if !data.is_empty() {
+            let mime_type = match mime.as_str() {
+                "image/png" => MimeType::Png,
+                _ => MimeType::Jpeg,
+            };
+            let picture = Picture::new_unchecked(
+                PictureType::CoverFront,
+                Some(mime_type),
+                None,
+                data,
+            );
+            tag.remove_picture_type(PictureType::CoverFront);
+            tag.push_picture(picture);
+        }
+    }
+
+    // 5. 保存到文件
+    tagged_file
+        .save_to_path(abs_path, WriteOptions::default())
+        .map_err(|e| format!("保存文件失败：{}", e))?;
+
+    // 6. 重新解析并返回更新后的 Song
+    let abs = abs_path.to_string_lossy().to_string();
+    Ok(parse_audio_metadata(abs_path, &abs))
+}
+
+/// 从 data URL 中解析 MIME 类型与二进制数据
+///
+/// 接受 `data:image/jpeg;base64,...` 或纯 base64 字符串
+fn decode_data_url(data_url: &str) -> (String, Vec<u8>) {
+    if let Some((meta, b64)) = data_url.split_once(',') {
+        let mime = meta
+            .strip_prefix("data:")
+            .and_then(|s| s.split(';').next())
+            .unwrap_or("image/jpeg")
+            .to_string();
+        let data = general_purpose::STANDARD.decode(b64).unwrap_or_default();
+        (mime, data)
+    } else {
+        let data = general_purpose::STANDARD
+            .decode(data_url)
+            .unwrap_or_default();
+        ("image/jpeg".to_string(), data)
+    }
 }

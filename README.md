@@ -1,4 +1,4 @@
-# 本地音乐播放器（Tauri + Vue 3）
+# 青律 CyanRhythm（Tauri + Vue 3 本地音乐播放器）
 
 一款**纯本地运行的桌面音乐播放器**，无云端服务、不联网，仅访问用户本地音频文件。采用 Tauri 2 将 Rust 原生后端与 Vue 3 前端打包为单一桌面应用，前端基于 IndexedDB 持久化全部数据。
 
@@ -31,6 +31,8 @@ tauri-local-music/
 | 封面编码 | `base64` | 封面转 data URL，随歌曲对象持久化 |
 | 歌曲 ID | `sha1` | 基于路径生成稳定 16 位十六进制 id |
 | 数据同步加密 | `aes-gcm` + `sha2` | AES-128-GCM 加密，按用户名哈希分桶存入 AppData |
+| 在线歌词 | `reqwest` | LRCLIB API 请求（`/get` 精确匹配 + `/search` 降级） |
+| 序列化 | `serde` + `serde_json` | 前后端数据结构序列化/反序列化 |
 | 系统目录 | `dirs` | 获取主目录、音乐目录、AppData |
 
 ### 前端技术栈（src，Vue 3）
@@ -42,11 +44,14 @@ tauri-local-music/
 | 样式 | `tailwindcss` 4 | 原子化 CSS，`darkMode:'class'` 深浅主题 |
 | 本地存储 | `idb` | IndexedDB Promise 封装，持久化全部数据 |
 | 音频播放 | `howler` | 基于 Web Audio 的成熟封装 |
-| 音频可视化 | `pixi.js` | WebGL 频谱音浪动画 |
+| 音频可视化 | 原生 Canvas 2D | 旋转黑胶 + 环形频谱柱 + 漂浮粒子动画 |
 | EQ 均衡器 | Web Audio `BiquadFilterNode` | 10 段实时增益调节 |
 | 状态管理 | `pinia` | 媒体库 / 播放器 / 播放列表 / 设置 / 统计 |
 | 图标 | `@element-plus/icons-vue` + 自定义 SVG | SVG 经 `vite-svg-loader` 以组件引入 |
-| 快捷键 | `mousetrap` | 全局播放控制快捷键 |
+| 快捷键 | `@tauri-apps/plugin-global-shortcut` | Tauri 原生全局快捷键（替代 mousetrap） |
+| 封面裁剪 | `cropperjs` | 元数据编辑器中的专辑封面裁剪 |
+| 像素图标 | `identicon.js` | 无封面歌曲生成像素图标 |
+| 实用工具 | `@vueuse/core` | 防抖、响应式工具函数 |
 | Tauri 桥接 | `@tauri-apps/api` | `invoke` 调用 Rust 命令、`convertFileSrc` 本地文件加载 |
 
 ---
@@ -75,21 +80,37 @@ tauri-local-music/
 
 ### 4. EQ 均衡器 & 音频可视化
 - 10 段均衡器（BiquadFilterNode），支持启用/禁用、增益滑块、预设
-- 播放详情页 Pixi.js 驱动的实时频谱音浪动画
+- 播放详情页原生 Canvas 2D 驱动的可视化动画（旋转黑胶 + 环形频谱 + 漂浮粒子）
 
-### 5. 播放统计
+### 5. 歌词获取
+- 按优先级自动获取：**内嵌歌词**（USLT/SYLT 标签）→ **同名 .lrc 文件** → **在线 LRCLIB**
+- 在线歌词精确匹配（`/get`）未命中时自动降级为模糊搜索（`/search`）
+- LRCLIB 服务地址可在设置中配置，未配置时使用默认值
+- 支持带时间轴的同步歌词与纯文本歌词
+
+### 6. 元数据编辑
+- 在线修改音频文件标签（标题、艺术家、专辑、专辑艺术家、年份、歌词、封面）
+- 封面支持裁剪后写入（基于 cropperjs）
+- 手动触发在线歌词匹配并写回文件
+
+### 7. 播放统计
 - 记录每首歌曲的播放次数与累计播放时长
 - 独立的统计视图，支持数据可视化
 
-### 6. 本地数据同步（备份/恢复）
+### 8. 本地数据同步（备份/恢复）
 - 将全部数据（歌曲、播放列表、统计、进度）备份到本地 AppData 目录
 - 按用户名分桶，支持 AES-128-GCM 密码加密
 - 从 AppData 恢复数据，覆盖本地
 
-### 7. 全局快捷键
+### 9. 全局快捷键
 - 播放/暂停、上一曲、下一曲（默认 `Space` / `←` / `→`，可在设置中自定义）
 
-### 8. 本地数据持久化（IndexedDB）
+### 10. 应用配置
+- LRCLIB 在线歌词服务地址可在设置面板「应用配置」中自定义
+- 配置持久化到本地文件 `AppData/CyanRhythm/config.json`
+- 无配置文件或读取失败时自动回退默认值，避免程序异常
+
+### 11. 本地数据持久化（IndexedDB）
 刷新/重启后自动恢复：
 - 全部歌曲数据（元数据 + 内嵌封面 base64）
 - 已扫描目录列表
@@ -97,6 +118,8 @@ tauri-local-music/
 - 播放器配置（音量、播放模式、主题、列表显示开关、EQ 配置、快捷键）
 - 上次播放歌曲与播放进度
 - 播放统计数据
+
+> 注：LRCLIB 地址等应用配置存储在 `AppData/CyanRhythm/config.json`（文件系统），与上述 IndexedDB 数据相互独立。
 
 ---
 
@@ -145,7 +168,7 @@ pnpm tauri-build
 6. 左侧侧边栏可新建/编辑/删除自定义播放列表，歌曲行内「+」加入列表、爱心收藏
 7. 底部播放栏：播放控制、进度拖拽、音量、播放模式、EQ 均衡器入口
 8. 点击播放栏打开全屏播放详情（频谱可视化动画）
-9. 设置面板：快捷键自定义、列表显示项、数据同步、清空数据
+9. 设置面板：常规（显示封面/专辑/序号/文件名等）、应用配置（LRCLIB 地址）、快捷键自定义、数据同步、清空数据
 
 ---
 
@@ -172,16 +195,19 @@ tauri-local-music/
 │   │   ├── useTheme.js          # 深浅主题切换
 │   │   ├── useShortcuts.js      # 全局快捷键绑定
 │   │   ├── useEqualizer.js      # EQ BiquadFilterNode 控制
-│   │   └── useAudioAnalyser.js  # 频谱分析（供可视化）
+│   │   ├── useAudioAnalyser.js  # 频谱分析（供可视化）
+│   │   └── useLyrics.js         # 歌词加载与同步滚动
 │   ├── utils/
 │   │   ├── path.js              # 前端路径工具（Win/Unix 兼容）
+│   │   ├── lrcParser.js         # LRC 歌词解析
+│   │   ├── identicon.js         # 像素图标生成
 │   │   └── eventBus.js          # mitt 事件总线
 │   ├── components/
 │   │   ├── layout/              # Sidebar / PlayerBar
 │   │   ├── song/                # SongTable(虚拟滚动 JSX) / AddToPlaylistPopover
-│   │   ├── player/              # PlayerDetail / AudioVisualizer(Pixi.js)
-│   │   └── common/              # SettingsDialog / ImportProgressDialog / FolderPicker
-│   │                            #   PlaylistEditor / EqDialog / AlbumCover / 等
+│   │   ├── player/              # PlayerDetail / AudioVisualizer(Canvas 2D) / LyricsPanel
+│   │   └── common/              # SettingsDialog/(拆分子模块) / MetadataEditor
+│   │                            #   CoverCropper / EqDialog / AlbumCover / 等
 │   └── views/                   # SongsView / AlbumsView / ArtistsView
 │                                #   FoldersView / PlaylistView / StatsView
 ├── src-tauri/                   # ── Rust 后端 ──
@@ -194,7 +220,9 @@ tauri-local-music/
 │       ├── lib.rs               # Tauri 命令注册 + 流式扫描核心逻辑
 │       ├── browse.rs            # 目录浏览（盘符/快捷入口/子目录）
 │       ├── scanner.rs           # 递归扫描音频文件（walkdir）
-│       ├── metadata.rs          # 音频元数据解析（lofty）+ 封面提取
+│       ├── metadata.rs          # 音频元数据解析（lofty）+ 封面提取 + 写入
+│       ├── lyrics.rs            # 歌词获取（内嵌/本地.lrc/在线 LRCLIB）
+│       ├── config.rs            # 应用配置读写（LRCLIB 地址等，AppData/config.json）
 │       ├── sync.rs              # 本地数据同步（AES-128-GCM 加密）
 │       └── models.rs            # 数据结构定义（Song / DirEntry / 等）
 └── public/
@@ -212,9 +240,19 @@ tauri-local-music/
 | `scan_library` | `{ path }` | 非流式扫描，一次性返回歌曲元数据 |
 | `scan_library_stream` | `{ scanId, path }` | **流式扫描**：通过 `scan-event-{id}` 事件推送 files→progress，命令返回全部歌曲 |
 | `cancel_scan` | `{ scanId }` | 取消正在进行的流式扫描 |
+| `get_file_info` | `{ filePath }` | 读取文件详情（大小、创建/修改时间、扩展名） |
 | `get_cover_data_url` | `{ filePath }` | 提取封面为 base64 data URL（兼容旧数据） |
+| `get_embedded_lyrics` | `{ filePath }` | 仅读取内嵌歌词（不触发在线请求） |
+| `get_lyrics` | `{ filePath, title, artist, album, duration }` | 按优先级获取歌词（内嵌→本地.lrc→在线） |
+| `get_online_lyrics` | `{ title, artist, album, duration }` | 仅在线获取歌词（元数据编辑器手动触发） |
+| `update_audio_metadata` | `{ filePath, title?, ... }` | 写入音频标签（标题/艺术家/歌词/封面等，lofty） |
+| `get_app_config` | — | 读取应用配置（LRCLIB 地址等，缺失返回默认值） |
+| `save_app_config` | `{ config }` | 保存应用配置到 `AppData/CyanRhythm/config.json` |
 | `sync_upload` | `{ dataBase64, username, password }` | 备份数据到 AppData（可选加密） |
 | `sync_download` | `{ username, password }` | 从 AppData 恢复数据（加密则解密） |
+| `sync_get_backup_info` | `{ username }` | 查询备份信息（路径/大小/加密状态/时间） |
+| `sync_delete_backup` | `{ username }` | 删除指定用户名的备份 |
+| `get_current_username` | — | 获取系统用户名（用于上传弹窗默认填充） |
 
 音频文件加载不经过命令，而是通过 `convertFileSrc(filePath)` 转为 `asset://` 协议 URL，由 WebView 直接加载（支持 Range/seek）。
 
@@ -241,9 +279,15 @@ tauri-local-music/
 - `library` store 派生 getter：`albums`（按专辑）、`artists`（按歌手）、`folders`（按 `fileRelPath` 所在目录）
 - 专辑/歌手/文件夹**详情页复用 SongsView**，通过 route name 区分过滤
 
+### 歌词获取优先级
+- Rust 端 `lyrics.rs` 按优先级获取：内嵌标签（USLT/SYLT）→ 同名 .lrc 文件 → 在线 LRCLIB（`/get` 精确匹配，未命中降级 `/search`）
+- LRCLIB 地址从 `config.rs` 读取（`AppData/CyanRhythm/config.json`），缺失/为空时回退默认值 `https://lrclib.net/api`
+- 前端 `useLyrics.js` + `lrcParser.js` 解析 LRC 时间轴实现同步滚动
+
 ### 虚拟滚动表格
 - `SongTable` 与导入管理面板均使用 `el-table-v2` + `el-auto-resizer`
 - 列 `cellRenderer` 用 JSX 编写（`<script setup lang="jsx">`），只渲染可视区行
+- 支持标题、文件名列点击表头排序（`sortable`），通过 `@column-sort` 事件维护 `sortState` 驱动 `sortedSongs` computed
 
 ### 数据持久化注意点
 - **Vue 3 响应式对象存入 IndexedDB 前必须用 `toRaw` 脱壳或展开为普通数组**——Proxy 无法被结构化克隆算法序列化
@@ -253,7 +297,15 @@ tauri-local-music/
 ### 数据同步加密
 - 密码经 SHA-256 派生 key（前 16 字节）和 iv（末尾 12 字节）
 - AES-128-GCM 加密，密文 + authTag 追加存储
-- 按用户名 SHA-256 哈希分桶存入 `AppData/com.lijin.tauri-local-music/sync-data/`
+- 按用户名 SHA-256 哈希分桶存入 `AppData/CyanRhythm/sync-data/`
+
+### 应用配置外部化
+- LRCLIB 地址等配置不再硬编码在源码中，而是读写 `AppData/CyanRhythm/config.json`
+- `config.rs` 提供 `load_config`/`save_config`/`get_lrclib_base`，配置缺失或解析失败时返回默认值，保证程序不异常
+
+### 设置面板模块化
+- `SettingsDialog` 拆分为独立子模块（`GeneralPanel` / `AppConfigPanel` / `ShortcutsPanel` / `SyncPanel` / `DangerPanel`），主容器仅负责 `el-drawer` + `el-collapse` 框架与展开状态
+- 各面板自带所需逻辑（store/db/api），通过 `@` 路径别名引用，抽屉打开时通过 `:open` prop 联动加载数据
 
 ---
 

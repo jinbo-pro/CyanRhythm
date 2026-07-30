@@ -1,10 +1,9 @@
 use std::path::Path;
 use std::time::Duration;
 
+use crate::config;
 use crate::metadata;
 use crate::models::LyricsResult;
-
-const LRCLIB_BASE: &str = "https://lrclib.net/api";
 
 /// 1. 内嵌歌词：从音频文件标签提取（USLT/SYLT）
 fn fetch_embedded(file_path: &str) -> Option<LyricsResult> {
@@ -58,6 +57,7 @@ async fn fetch_online(
     album: &str,
     duration: u64,
 ) -> Option<LyricsResult> {
+    let lrclib_base = config::get_lrclib_base();
     let client = reqwest::Client::builder()
         .user_agent("tauri-local-music/0.1")
         .timeout(Duration::from_secs(8))
@@ -66,7 +66,7 @@ async fn fetch_online(
 
     // 先尝试 /get 精确匹配
     let resp = client
-        .get(format!("{}/get", LRCLIB_BASE))
+        .get(format!("{}/get", lrclib_base))
         .query(&[
             ("track_name", title),
             ("artist_name", artist),
@@ -79,7 +79,7 @@ async fn fetch_online(
 
     if resp.status() == reqwest::StatusCode::NOT_FOUND {
         // 降级为 search
-        return search_online(&client, title, artist).await;
+        return search_online(&client, title, artist, &lrclib_base).await;
     }
 
     let json: serde_json::Value = resp.json().await.ok()?;
@@ -91,9 +91,10 @@ async fn search_online(
     client: &reqwest::Client,
     title: &str,
     artist: &str,
+    lrclib_base: &str,
 ) -> Option<LyricsResult> {
     let resp = client
-        .get(format!("{}/search", LRCLIB_BASE))
+        .get(format!("{}/search", lrclib_base))
         .query(&[("track_name", title), ("artist_name", artist)])
         .send()
         .await

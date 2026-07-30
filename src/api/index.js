@@ -196,6 +196,27 @@ export function checkHealth() {
 }
 
 // ═══════════════════════════════════════════════
+//  应用配置（LRCLIB 地址等，持久化到 AppData/config.json）
+// ═══════════════════════════════════════════════
+
+/**
+ * 读取应用配置（配置文件不存在时后端返回默认值）
+ * @returns {Promise<{lrclibBase:string}>}
+ */
+export function getAppConfig() {
+  return invoke('get_app_config')
+}
+
+/**
+ * 保存应用配置到本地文件
+ * @param {{lrclibBase:string}} config
+ * @returns {Promise<void>}
+ */
+export function saveAppConfig(config) {
+  return invoke('save_app_config', { config })
+}
+
+// ═══════════════════════════════════════════════
 //  数据同步（本地备份/恢复）
 // ═══════════════════════════════════════════════
 

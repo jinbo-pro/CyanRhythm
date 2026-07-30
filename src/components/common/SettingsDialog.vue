@@ -11,7 +11,15 @@ import {
 import { clearAllData } from '../../db/index.js'
 import { getAllStats, replaceAllStats } from '../../db/repositories/stats.js'
 import { loadProgress, saveProgress } from '../../db/repositories/progress.js'
-import { uploadSync, downloadSync, getBackupInfo, deleteBackup, getCurrentUsername } from '../../api/index.js'
+import {
+  uploadSync,
+  downloadSync,
+  getBackupInfo,
+  deleteBackup,
+  getCurrentUsername,
+  getAppConfig,
+  saveAppConfig as saveAppConfigApi,
+} from '../../api/index.js'
 
 const visible = defineModel({ type: Boolean, default: false })
 
@@ -26,6 +34,33 @@ const systemUsername = ref('')
 getCurrentUsername().then((name) => {
   systemUsername.value = name || ''
 }).catch(() => {})
+
+// ===== 应用配置（LRCLIB 地址等，持久化到本地文件） =====
+const appConfigDraft = ref({ lrclibBase: '' })
+const appConfigSaving = ref(false)
+
+/** 加载应用配置到草稿（后端缺省时返回默认值） */
+async function loadAppConfig() {
+  try {
+    const config = await getAppConfig()
+    appConfigDraft.value = { lrclibBase: config.lrclibBase || '' }
+  } catch {
+    appConfigDraft.value = { lrclibBase: '' }
+  }
+}
+
+/** 保存应用配置到本地文件 */
+async function onSaveAppConfig() {
+  appConfigSaving.value = true
+  try {
+    await saveAppConfigApi({ lrclibBase: appConfigDraft.value.lrclibBase.trim() })
+    ElMessage.success('应用配置已保存')
+  } catch (e) {
+    ElMessage.error('保存配置失败：' + (e?.message || e))
+  } finally {
+    appConfigSaving.value = false
+  }
+}
 
 // ===== 同步凭证管理 =====
 const CRED_KEY = 'local-music:sync-credentials'
@@ -93,6 +128,7 @@ async function loadBackupInfo() {
 watch(visible, (v) => {
   if (v) {
     loadBackupInfo()
+    loadAppConfig()
     draftShortcuts.value = { ...settings.shortcuts }
   }
 })
@@ -361,6 +397,33 @@ function onRefresh() {
             <el-button plain size="small" @click="onRefresh">
               <template #icon><el-icon><Refresh /></el-icon></template>
               刷新
+            </el-button>
+          </div>
+        </div>
+      </el-collapse-item>
+
+      <!-- 应用配置 -->
+      <el-collapse-item name="appconfig" title="应用配置">
+        <div class="space-y-4">
+          <div>
+            <div class="text-sm font-medium">LRCLIB 地址</div>
+            <div class="mt-0.5 mb-2 text-xs text-neutral-400">
+              在线歌词匹配服务的 API 地址，留空使用默认值
+            </div>
+            <el-input
+              v-model="appConfigDraft.lrclibBase"
+              placeholder="https://lrclib.net/api"
+              clearable
+            />
+          </div>
+          <div class="flex justify-end">
+            <el-button
+              type="primary"
+              size="small"
+              :loading="appConfigSaving"
+              @click="onSaveAppConfig"
+            >
+              保存
             </el-button>
           </div>
         </div>

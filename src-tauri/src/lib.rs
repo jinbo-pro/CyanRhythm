@@ -1,6 +1,7 @@
 // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
 
 mod browse;
+mod config;
 mod lyrics;
 mod metadata;
 mod models;
@@ -329,6 +330,20 @@ async fn get_online_lyrics(
     Ok(lyrics::get_online_lyrics(&title, &artist, &album, duration).await)
 }
 
+// ── 应用配置 ──
+
+/// 读取应用配置（LRCLIB 地址等），配置文件不存在时返回默认值
+#[tauri::command]
+fn get_app_config() -> config::AppConfig {
+    config::load_config()
+}
+
+/// 保存应用配置到文件
+#[tauri::command]
+fn save_app_config(config: config::AppConfig) -> Result<(), String> {
+    config::save_config(&config)
+}
+
 // ── 数据同步 ──
 
 /// 上传同步数据（保存到本地 AppData，可选 AES-128-GCM 加密）
@@ -401,6 +416,8 @@ pub fn run() {
             sync_get_backup_info,
             sync_delete_backup,
             get_current_username,
+            get_app_config,
+            save_app_config,
         ])
         .setup(|app| {
             // 安全兜底：如果前端 10 秒内未调用 show()（如 JS 加载失败），

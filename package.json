@@ -1,6 +1,7 @@
 {
   "name": "tauri-local-music",
   "private": true,
+  "author": "lijinbo <lijinbode@foxmail.com>",
   "version": "0.1.0",
   "type": "module",
   "scripts": {
@@ -9,7 +10,8 @@
     "preview": "vite preview",
     "tauri": "tauri",
     "tauri-dev": "tauri dev",
-    "tauri-build": "tauri build"
+    "tauri-build": "tauri build",
+    "release": "node scripts/release.js"
   },
   "dependencies": {
     "@element-plus/icons-vue": "^2.3.2",

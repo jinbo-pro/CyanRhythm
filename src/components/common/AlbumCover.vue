@@ -1,8 +1,8 @@
 <script setup>
 import { ref, watch, computed } from 'vue'
-import { coverUrl } from '../../api/index.js'
-import { useSettingsStore } from '../../stores/settings.js'
-import { generateIdenticon } from '../../utils/identicon.js'
+import { coverUrl } from '@/api/index.js'
+import { useSettingsStore } from '@/stores/settings.js'
+import { generateIdenticon } from '@/utils/identicon.js'
 
 const settings = useSettingsStore()
 

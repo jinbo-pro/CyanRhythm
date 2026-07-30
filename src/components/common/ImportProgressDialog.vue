@@ -1,9 +1,9 @@
 <script setup lang="jsx">
 import { computed, ref } from 'vue'
-import { useImport } from '../../composables/useImport.js'
-import { useLibraryStore } from '../../stores/library.js'
-import { getBaseName } from '../../utils/path.js'
-import { formatTime } from '../../composables/usePlayer.js'
+import { useImport } from '@/composables/useImport.js'
+import { useLibraryStore } from '@/stores/library.js'
+import { getBaseName } from '@/utils/path.js'
+import { formatTime } from '@/composables/usePlayer.js'
 import AlbumCover from './AlbumCover.vue'
 
 const {

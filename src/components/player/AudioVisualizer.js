@@ -1,4 +1,4 @@
-import { getFrequencyData } from '../../composables/useAudioAnalyser.js'
+import { getFrequencyData } from '@/composables/useAudioAnalyser.js'
 
 /**
  * 基于原生 Canvas 2D 的音频可视化器

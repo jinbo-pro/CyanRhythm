@@ -1,6 +1,6 @@
 <script setup>
 import { ref, watch, computed } from 'vue'
-import { browseDirectories } from '../../api/index.js'
+import { browseDirectories } from '@/api/index.js'
 
 const props = defineProps({
   modelValue: { type: Boolean, default: false },

@@ -1,11 +1,11 @@
 <script setup>
 import { computed } from 'vue'
-import { usePlayerStore } from '../../stores/player.js'
-import { useSettingsStore, PLAY_MODES, PLAY_MODE_INFO } from '../../stores/settings.js'
+import { usePlayerStore } from '@/stores/player.js'
+import { useSettingsStore, PLAY_MODES, PLAY_MODE_INFO } from '@/stores/settings.js'
 import AlbumCover from '../common/AlbumCover.vue'
 import PlayModeIcon from '../common/PlayModeIcon.vue'
-import { formatTime } from '../../composables/usePlayer.js'
-import { eventBus, EVENTS } from '../../utils/eventBus.js'
+import { formatTime } from '@/composables/usePlayer.js'
+import { eventBus, EVENTS } from '@/utils/eventBus.js'
 
 const emit = defineEmits(['open-detail'])
 

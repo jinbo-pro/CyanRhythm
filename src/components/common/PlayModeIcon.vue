@@ -1,8 +1,8 @@
 <script setup>
-import { PLAY_MODES } from '../../stores/settings.js'
-import IconSequence from '../../assets/icons/play-sequence.svg'
-import IconLoop from '../../assets/icons/play-loop.svg'
-import IconShuffle from '../../assets/icons/play-shuffle.svg'
+import { PLAY_MODES } from '@/stores/settings.js'
+import IconSequence from '@/assets/icons/play-sequence.svg'
+import IconLoop from '@/assets/icons/play-loop.svg'
+import IconShuffle from '@/assets/icons/play-shuffle.svg'
 
 defineProps({
   mode: { type: String, required: true },

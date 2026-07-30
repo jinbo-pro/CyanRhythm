@@ -1,6 +1,6 @@
 <script setup>
 import { ref, onBeforeUnmount } from 'vue'
-import { keyEventToCombo, formatCombo } from '../../composables/useShortcuts.js'
+import { keyEventToCombo, formatCombo } from '@/composables/useShortcuts.js'
 
 const props = defineProps({
   // Tauri global-shortcut 格式字符串（如 'Space'、'Control+Right'）

@@ -1,6 +1,6 @@
 <script setup>
 import { ref, watch, computed } from 'vue'
-import { updateMetadata, coverUrl, getEmbeddedLyrics, fetchOnlineLyrics } from '../../api/index.js'
+import { updateMetadata, coverUrl, getEmbeddedLyrics, fetchOnlineLyrics } from '@/api/index.js'
 import CoverCropper from './CoverCropper.vue'
 
 const props = defineProps({

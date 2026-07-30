@@ -4,11 +4,11 @@ import { RouterLink, useRouter } from 'vue-router'
 import PlaylistEditor from '../common/PlaylistEditor.vue'
 import PlaylistIcon from '../common/PlaylistIcon.vue'
 import EqDialog from '../common/EqDialog.vue'
-import { usePlaylistStore } from '../../stores/playlist.js'
-import { useSettingsStore } from '../../stores/settings.js'
-import { useTheme } from '../../composables/useTheme.js'
-import { useImport } from '../../composables/useImport.js'
-import { eventBus, EVENTS } from '../../utils/eventBus.js'
+import { usePlaylistStore } from '@/stores/playlist.js'
+import { useSettingsStore } from '@/stores/settings.js'
+import { useTheme } from '@/composables/useTheme.js'
+import { useImport } from '@/composables/useImport.js'
+import { eventBus, EVENTS } from '@/utils/eventBus.js'
 
 const playlistStore = usePlaylistStore()
 const settingsStore = useSettingsStore()

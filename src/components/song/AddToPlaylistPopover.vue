@@ -1,6 +1,6 @@
 <script setup>
 import { ref, nextTick, watch, onBeforeUnmount } from 'vue'
-import { usePlaylistStore } from '../../stores/playlist.js'
+import { usePlaylistStore } from '@/stores/playlist.js'
 import PlaylistIcon from '../common/PlaylistIcon.vue'
 
 /**

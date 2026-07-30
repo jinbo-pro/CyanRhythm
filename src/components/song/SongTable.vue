@@ -5,11 +5,11 @@ import { ElButton, ElIcon } from 'element-plus'
 import { Microphone, Histogram, Delete, Plus, StarFilled, Star } from '@element-plus/icons-vue'
 import AlbumCover from '../common/AlbumCover.vue'
 import AddToPlaylistPopover from './AddToPlaylistPopover.vue'
-import { usePlayerStore } from '../../stores/player.js'
-import { useSettingsStore } from '../../stores/settings.js'
-import { usePlaylistStore } from '../../stores/playlist.js'
-import { formatTime } from '../../composables/usePlayer.js'
-import { eventBus, EVENTS } from '../../utils/eventBus.js'
+import { usePlayerStore } from '@/stores/player.js'
+import { useSettingsStore } from '@/stores/settings.js'
+import { usePlaylistStore } from '@/stores/playlist.js'
+import { formatTime } from '@/composables/usePlayer.js'
+import { eventBus, EVENTS } from '@/utils/eventBus.js'
 
 const props = defineProps({
   songs: { type: Array, default: () => [] },

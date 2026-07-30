@@ -1,6 +1,6 @@
 <script setup>
 import { computed } from 'vue'
-import { generateIdenticon } from '../../utils/identicon.js'
+import { generateIdenticon } from '@/utils/identicon.js'
 
 /**
  * 统一播放列表图标组件

@@ -1,7 +1,7 @@
 <script setup>
 import { ref, computed, watch } from 'vue'
-import { useSettingsStore } from '../../stores/settings.js'
-import { EQ_LABELS, EQ_PRESETS } from '../../composables/useEqualizer.js'
+import { useSettingsStore } from '@/stores/settings.js'
+import { EQ_LABELS, EQ_PRESETS } from '@/composables/useEqualizer.js'
 
 const visible = defineModel({ type: Boolean, default: false })
 const settings = useSettingsStore()

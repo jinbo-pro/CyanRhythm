@@ -1,6 +1,6 @@
 <script setup>
 import { ref, watch, nextTick } from 'vue'
-import { useLyrics } from '../../composables/useLyrics.js'
+import { useLyrics } from '@/composables/useLyrics.js'
 
 const {
   lines,

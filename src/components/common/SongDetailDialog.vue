@@ -1,7 +1,7 @@
 <script setup>
 import { ref, watch } from 'vue'
-import { getFileInfo } from '../../api/index.js'
-import { formatTime } from '../../composables/usePlayer.js'
+import { getFileInfo } from '@/api/index.js'
+import { formatTime } from '@/composables/usePlayer.js'
 
 const props = defineProps({
   /** 当前歌曲对象（需包含 fileRelPath、duration 等字段） */

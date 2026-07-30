@@ -39,9 +39,7 @@ fn encrypt_buffer(data: &[u8], password: &str) -> Vec<u8> {
     let key = Key::<Aes128Gcm>::from_slice(&key_bytes);
     let cipher = Aes128Gcm::new(key);
     let nonce = Nonce::from_slice(&iv);
-    cipher
-        .encrypt(nonce, data)
-        .expect("AES-128-GCM 加密失败")
+    cipher.encrypt(nonce, data).expect("AES-128-GCM 加密失败")
 }
 
 /// AES-128-GCM 解密（encrypt_buffer 的逆运算）
@@ -104,7 +102,8 @@ pub fn upload(data: &[u8], username: &str, password: &str) -> Result<SyncUploadR
     let meta_path = bucket_dir.join("meta.json");
 
     std::fs::write(&data_path, &final_data).map_err(|e| format!("写入数据失败：{}", e))?;
-    let meta_json = serde_json::to_string_pretty(&meta).map_err(|e| format!("序列化元数据失败：{}", e))?;
+    let meta_json =
+        serde_json::to_string_pretty(&meta).map_err(|e| format!("序列化元数据失败：{}", e))?;
     std::fs::write(&meta_path, meta_json).map_err(|e| format!("写入元数据失败：{}", e))?;
 
     Ok(SyncUploadResult {
@@ -187,9 +186,7 @@ pub fn get_backup_info(username: &str) -> Result<SyncBackupInfo, String> {
         .map(|m| (m.encrypted, m.uploaded_at.clone()))
         .unwrap_or((false, String::new()));
 
-    let size = std::fs::metadata(&data_path)
-        .map(|m| m.len())
-        .unwrap_or(0);
+    let size = std::fs::metadata(&data_path).map(|m| m.len()).unwrap_or(0);
 
     Ok(SyncBackupInfo {
         exists: true,
@@ -214,8 +211,7 @@ pub fn delete_backup(username: &str) -> Result<(), String> {
     let bucket_dir = get_data_root()?.join(&bucket);
 
     if bucket_dir.exists() {
-        std::fs::remove_dir_all(&bucket_dir)
-            .map_err(|e| format!("删除备份失败：{}", e))?;
+        std::fs::remove_dir_all(&bucket_dir).map_err(|e| format!("删除备份失败：{}", e))?;
     }
 
     Ok(())

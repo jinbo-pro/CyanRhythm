@@ -229,8 +229,7 @@ fn cancel_scan(scan_id: String, state: State<'_, AppState>) {
 #[tauri::command]
 fn get_file_info(file_path: String) -> Result<FileInfo, String> {
     let path = std::path::Path::new(&file_path);
-    let metadata = std::fs::metadata(path)
-        .map_err(|e| format!("无法读取文件信息：{}", e))?;
+    let metadata = std::fs::metadata(path).map_err(|e| format!("无法读取文件信息：{}", e))?;
 
     let file_name = path
         .file_name()
@@ -349,10 +348,7 @@ fn sync_upload(
 
 /// 下载同步数据（从本地 AppData 读取，加密则解密后返回 JSON）
 #[tauri::command]
-fn sync_download(
-    username: String,
-    password: String,
-) -> Result<serde_json::Value, String> {
+fn sync_download(username: String, password: String) -> Result<serde_json::Value, String> {
     let data = sync::download(&username, &password)?;
     serde_json::from_slice(&data).map_err(|e| format!("数据解析失败：{}", e))
 }
@@ -377,14 +373,13 @@ fn get_current_username() -> Option<String> {
         return Some(name);
     }
     // 回退：从主目录路径提取最后一段作为用户名
-    dirs::home_dir().and_then(|p| {
-        p.file_name().map(|s| s.to_string_lossy().to_string())
-    })
+    dirs::home_dir().and_then(|p| p.file_name().map(|s| s.to_string_lossy().to_string()))
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
+        .plugin(tauri_plugin_global_shortcut::Builder::new().build())
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_opener::init())
         .manage(AppState {

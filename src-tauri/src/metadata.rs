@@ -60,7 +60,10 @@ pub fn parse_audio_metadata(abs_path: &Path, rel_path: &str) -> Song {
         .or_else(|| tagged_file.first_tag());
 
     let (title, artist, album_artist, album, year, cover) = if let Some(tag) = tag {
-        let title = tag.title().map(|s| s.to_string()).unwrap_or_else(|| file_name.clone());
+        let title = tag
+            .title()
+            .map(|s| s.to_string())
+            .unwrap_or_else(|| file_name.clone());
         let artist = tag
             .artist()
             .map(|s| s.to_string())
@@ -210,12 +213,8 @@ pub fn update_audio_metadata(
                 "image/png" => MimeType::Png,
                 _ => MimeType::Jpeg,
             };
-            let picture = Picture::new_unchecked(
-                PictureType::CoverFront,
-                Some(mime_type),
-                None,
-                data,
-            );
+            let picture =
+                Picture::new_unchecked(PictureType::CoverFront, Some(mime_type), None, data);
             tag.remove_picture_type(PictureType::CoverFront);
             tag.push_picture(picture);
         }

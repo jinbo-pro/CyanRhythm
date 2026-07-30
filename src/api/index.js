@@ -106,6 +106,20 @@ export async function coverUrl(filePath) {
 }
 
 // ═══════════════════════════════════════════════
+//  文件详情（按需实时读取）
+// ═══════════════════════════════════════════════
+
+/**
+ * 读取音频文件的详情（文件名、大小、创建/修改时间、扩展名）
+ * 仅在用户主动点击「详情」时调用
+ * @param {string} filePath 音频文件的绝对路径
+ * @returns {Promise<{path:string,fileName:string,fileSize:number,createdAt:number|null,modifiedAt:number|null,extension:string}>}
+ */
+export function getFileInfo(filePath) {
+  return invoke('get_file_info', { filePath })
+}
+
+// ═══════════════════════════════════════════════
 //  歌词获取
 // ═══════════════════════════════════════════════
 

@@ -7,6 +7,7 @@ import { connectAudioNode } from '../../composables/useAudioAnalyser.js'
 import { coverUrl } from '../../api/index.js'
 import { formatTime } from '../../composables/usePlayer.js'
 import PlayModeIcon from '../common/PlayModeIcon.vue'
+import SongDetailDialog from '../common/SongDetailDialog.vue'
 import LyricsPanel from './LyricsPanel.vue'
 
 const props = defineProps({
@@ -73,6 +74,13 @@ function toggleMute() {
 }
 function cycleMode() {
   settings.cyclePlayMode()
+}
+
+// 歌曲详情弹窗可见性（实际获取逻辑在 SongDetailDialog 内部按需触发）
+const detailVisible = ref(false)
+function openDetail() {
+  if (!player.currentSong) return
+  detailVisible.value = true
 }
 
 /** 将当前 Howl 的 audio 元素接入 WebAudio 分析器 */
@@ -220,6 +228,12 @@ onBeforeUnmount(() => {
               <el-icon :size="22"><DArrowRight /></el-icon>
             </el-button>
           </el-tooltip>
+
+          <el-tooltip content="详情" placement="top">
+            <el-button text circle class="ctrl-btn" :disabled="!hasSong" @click="openDetail">
+              <el-icon :size="18"><InfoFilled /></el-icon>
+            </el-button>
+          </el-tooltip>
         </div>
 
         <!-- 进度条 -->
@@ -264,6 +278,9 @@ onBeforeUnmount(() => {
         />
       </div>
     </footer>
+
+    <!-- 歌曲详情弹窗（独立组件，打开时实时读取文件信息） -->
+    <SongDetailDialog v-model="detailVisible" :song="player.currentSong" />
   </div>
 </template>
 

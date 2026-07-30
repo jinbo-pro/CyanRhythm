@@ -14,7 +14,8 @@ use base64::{engine::general_purpose, Engine as _};
 use tauri::{Emitter, Manager, State};
 
 use models::{
-    BrowseResult, LyricsResult, ScanResult, ScanStreamResult, SyncBackupInfo, SyncUploadResult,
+    BrowseResult, FileInfo, LyricsResult, ScanResult, ScanStreamResult, SyncBackupInfo,
+    SyncUploadResult,
 };
 
 /// 应用全局状态：管理扫描任务的取消标志
@@ -220,6 +221,47 @@ fn cancel_scan(scan_id: String, state: State<'_, AppState>) {
     }
 }
 
+// ── 文件详情（按需实时读取） ──
+
+/// 读取音频文件的详情（文件名、大小、创建/修改时间、扩展名）
+///
+/// 仅在用户主动点击「详情」时调用，避免扫描阶段无关开销。
+#[tauri::command]
+fn get_file_info(file_path: String) -> Result<FileInfo, String> {
+    let path = std::path::Path::new(&file_path);
+    let metadata = std::fs::metadata(path)
+        .map_err(|e| format!("无法读取文件信息：{}", e))?;
+
+    let file_name = path
+        .file_name()
+        .map(|s| s.to_string_lossy().to_string())
+        .unwrap_or_default();
+    let extension = path
+        .extension()
+        .map(|s| s.to_string_lossy().to_uppercase())
+        .unwrap_or_default();
+
+    let created_at = metadata
+        .created()
+        .ok()
+        .and_then(|t| t.duration_since(std::time::UNIX_EPOCH).ok())
+        .map(|d| d.as_millis() as u64);
+    let modified_at = metadata
+        .modified()
+        .ok()
+        .and_then(|t| t.duration_since(std::time::UNIX_EPOCH).ok())
+        .map(|d| d.as_millis() as u64);
+
+    Ok(FileInfo {
+        path: file_path,
+        file_name,
+        file_size: metadata.len(),
+        created_at,
+        modified_at,
+        extension,
+    })
+}
+
 // ── 封面提取 ──
 
 /// 从音频文件中提取封面并返回 base64 data URL（兼容旧数据）
@@ -307,6 +349,7 @@ pub fn run() {
             scan_library,
             scan_library_stream,
             cancel_scan,
+            get_file_info,
             get_cover_data_url,
             get_lyrics,
             sync_upload,

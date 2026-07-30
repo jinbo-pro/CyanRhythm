@@ -92,6 +92,25 @@ pub struct SyncBackupInfo {
 
 // 流式扫描事件通过 serde_json::json! 在 lib.rs 中直接构造，此处不额外定义结构体。
 
+/// 音频文件详情（按需实时读取，非持久化数据）
+#[derive(Debug, Clone, Serialize)]
+pub struct FileInfo {
+    /// 完整路径
+    pub path: String,
+    #[serde(rename = "fileName")]
+    pub file_name: String,
+    #[serde(rename = "fileSize")]
+    pub file_size: u64,
+    /// 创建时间（Unix 毫秒时间戳，不支持的平台为 None）
+    #[serde(rename = "createdAt")]
+    pub created_at: Option<u64>,
+    /// 修改时间（Unix 毫秒时间戳）
+    #[serde(rename = "modifiedAt")]
+    pub modified_at: Option<u64>,
+    /// 扩展名（大写，如 "MP3"）
+    pub extension: String,
+}
+
 /// 歌词获取结果（统一出口）
 #[derive(Debug, Clone, Serialize)]
 pub struct LyricsResult {

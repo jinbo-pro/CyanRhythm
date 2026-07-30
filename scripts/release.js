@@ -111,7 +111,7 @@ async function main() {
   run("git", ["commit", "-m", "chore: configure release workflow"]);
   run("git", ["push"]);
   run("git", ["tag", tag]);
-  run("git", ["push", "origin", tag]);
+  run("git", ["push", "github", tag]);
 
   console.log(`Released ${tag}`);
 }

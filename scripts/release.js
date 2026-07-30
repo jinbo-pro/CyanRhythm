@@ -108,8 +108,8 @@ async function main() {
   updateVersions(version);
 
   run("git", ["add", "."]);
-  run("git", ["commit", "-m", "chore: configure release workflow"]);
-  run("git", ["push"]);
+  run("git", ["commit", "-m", `chore: release ${version}`]);
+  run("git", ["push", "github", "HEAD:master"]);
   run("git", ["tag", tag]);
   run("git", ["push", "github", tag]);
 

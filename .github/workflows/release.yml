@@ -5,6 +5,11 @@ on:
     tags:
       - "app-v*"
   workflow_dispatch:
+    inputs:
+      tag_name:
+        description: "Existing tag to publish, for example app-v1.0.1"
+        required: true
+        type: string
 
 permissions:
   contents: write
@@ -17,6 +22,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.tag_name || github.ref }}
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
@@ -46,8 +53,8 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tagName: ${{ github.ref_name }}
-          releaseName: "CyanRhythm ${{ github.ref_name }}"
+          tagName: ${{ github.event.inputs.tag_name || github.ref_name }}
+          releaseName: "CyanRhythm ${{ github.event.inputs.tag_name || github.ref_name }}"
           releaseBody: "Download the Windows installer from the assets below."
           releaseDraft: false
           prerelease: false

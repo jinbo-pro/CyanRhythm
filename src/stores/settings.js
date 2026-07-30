@@ -87,6 +87,7 @@ export const useSettingsStore = defineStore('settings', {
     showCover: true, // 是否显示封面缩略图
     showAlbum: true, // 是否显示专辑列
     showIndex: true, // 是否显示序号列
+    showFileName: false, // 是否显示文件名列
     pixelIcon: false, // 无封面时是否用名称生成像素图标
     // 快捷键配置：动作 -> Tauri global-shortcut 格式（如 'Space'、'Control+Right'）
     shortcuts: { ...DEFAULT_SHORTCUTS },
@@ -106,6 +107,7 @@ export const useSettingsStore = defineStore('settings', {
       this.showCover = data.showCover ?? true
       this.showAlbum = data.showAlbum ?? true
       this.showIndex = data.showIndex ?? true
+      this.showFileName = data.showFileName ?? false
       this.pixelIcon = data.pixelIcon ?? false
       // 合并快捷键：迁移旧 mousetrap 格式，缺失项回退到默认
       const savedShortcuts = {}
@@ -135,6 +137,7 @@ export const useSettingsStore = defineStore('settings', {
           showCover: this.showCover,
           showAlbum: this.showAlbum,
           showIndex: this.showIndex,
+          showFileName: this.showFileName,
           pixelIcon: this.pixelIcon,
           shortcuts: { ...this.shortcuts },
           eqEnabled: this.eqEnabled,

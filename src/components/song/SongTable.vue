@@ -31,6 +31,32 @@ const addMenuRef = ref(null)
 
 const isCurrent = (song) => player.currentSong && player.currentSong.id === song.id
 
+/** 从文件路径提取文件名（兼容 Windows \ 和 Unix / 分隔符） */
+function getFileName(filePath) {
+  if (!filePath) return ''
+  return filePath.split(/[\\/]/).pop()
+}
+
+// ===== 列排序（标题 / 文件名） =====
+const sortState = ref({ key: '', order: 'asc' })
+
+/** 按当前排序状态生成有序歌曲列表 */
+const sortedSongs = computed(() => {
+  const { key, order } = sortState.value
+  if (!key) return props.songs
+  const dir = order === 'asc' ? 1 : -1
+  return [...props.songs].sort((a, b) => {
+    const va = key === 'fileName' ? getFileName(a.fileRelPath) : a[key] || ''
+    const vb = key === 'fileName' ? getFileName(b.fileRelPath) : b[key] || ''
+    return String(va).localeCompare(String(vb), 'zh') * dir
+  })
+})
+
+/** el-table-v2 列排序事件：点击表头切换升/降序 */
+function onColumnSort({ key, order }) {
+  sortState.value = { key, order }
+}
+
 function rowClass({ rowData }) {
   return isCurrent(rowData) ? 'current-song' : ''
 }
@@ -42,8 +68,8 @@ const handleRowClick = useDebounceFn(({ rowData }) => {
     player.isPlaying ? player.pause() : player.play()
   } else {
     // 非当前歌曲：切到该歌曲并开始播放
-    const index = props.songs.findIndex((s) => s.id === rowData.id)
-    if (index >= 0) player.playSongs(props.songs, index)
+    const index = sortedSongs.value.findIndex((s) => s.id === rowData.id)
+    if (index >= 0) player.playSongs(sortedSongs.value, index)
   }
 }, 250)
 
@@ -54,7 +80,7 @@ const rowEventHandlers = {
 /** 滚动到当前播放歌曲所在行（定位） */
 function locateCurrent() {
   if (!player.currentSong) return
-  const index = props.songs.findIndex((s) => s.id === player.currentSong.id)
+  const index = sortedSongs.value.findIndex((s) => s.id === player.currentSong.id)
   if (index >= 0) {
     // 'center' 让当前歌曲尽可能停在可视区中间，定位更直观
     tableRef.value && tableRef.value.scrollToRow(index, 'center')
@@ -92,9 +118,11 @@ const columns = computed(() => {
   // 标题（封面 + 歌名 / 艺术家）
   cols.push({
     key: 'title',
+    dataKey: 'title',
     title: '标题',
     width: 220,
     flexGrow: 2,
+    sortable: true,
     cellRenderer: ({ rowData }) => (
       <div class="flex w-full min-w-0 items-center gap-3">
         {settings.showCover ? <AlbumCover song={rowData} size={36} rounded="md" /> : null}
@@ -115,6 +143,20 @@ const columns = computed(() => {
       width: 160,
       flexGrow: 1,
       cellRenderer: ({ cellData }) => <span class="truncate">{cellData}</span>,
+    })
+  }
+
+  // 文件名（可在设置中开关，支持排序）
+  if (settings.showFileName) {
+    cols.push({
+      key: 'fileName',
+      title: '文件名',
+      width: 180,
+      flexGrow: 1,
+      sortable: true,
+      cellRenderer: ({ rowData }) => (
+        <span class="truncate text-neutral-500">{getFileName(rowData.fileRelPath)}</span>
+      ),
     })
   }
 
@@ -202,12 +244,13 @@ const columns = computed(() => {
         <el-table-v2
           ref="tableRef"
           :columns="columns"
-          :data="songs"
+          :data="sortedSongs"
           :width="width"
           :height="height"
           :row-height="54"
           :row-class="rowClass"
           :row-event-handlers="rowEventHandlers"
+          @column-sort="onColumnSort"
         >
           <template #empty>
             <div class="flex h-full items-center justify-center">

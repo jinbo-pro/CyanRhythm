@@ -1,6 +1,7 @@
 <script setup>
 import { ref, watch, computed } from 'vue'
-import { updateMetadata, coverUrl, getEmbeddedLyrics } from '../../api/index.js'
+import { updateMetadata, coverUrl, getEmbeddedLyrics, fetchOnlineLyrics } from '../../api/index.js'
+import CoverCropper from './CoverCropper.vue'
 
 const props = defineProps({
   /** 当前编辑的歌曲对象 */
@@ -27,6 +28,10 @@ const coverChanged = ref(false)
 const saving = ref(false)
 const coverLoading = ref(false)
 const fileInputRef = ref(null)
+
+// 裁剪弹窗：cropSource 为待裁剪图片的 data URL
+const cropperVisible = ref(false)
+const cropSource = ref('')
 
 const hasCover = computed(() => !!coverData.value)
 
@@ -67,18 +72,60 @@ function pickCover() {
   fileInputRef.value?.click()
 }
 
-/** 文件选择后读取为 data URL */
+/** 文件选择后读取为 data URL 并进入裁剪 */
 function onCoverFile(e) {
   const file = e.target.files?.[0]
   if (!file) return
   const reader = new FileReader()
   reader.onload = () => {
-    coverData.value = reader.result
-    coverChanged.value = true
+    cropSource.value = reader.result
+    cropperVisible.value = true
   }
   reader.readAsDataURL(file)
   // 清空 input 的 value，允许重复选择同一文件
   e.target.value = ''
+}
+
+/** 重新裁剪当前封面 */
+function recropCover() {
+  if (!coverData.value) return
+  cropSource.value = coverData.value
+  cropperVisible.value = true
+}
+
+/** 裁剪完成，应用为新封面 */
+function onCropped(dataUrl) {
+  coverData.value = dataUrl
+  coverChanged.value = true
+}
+
+// 在线歌词获取
+const lyricsFetching = ref(false)
+
+/** 尝试从 lrclib 在线获取歌词并填充（使用表单中的标题/艺术家，支持用户修正后重试） */
+async function fetchLyrics() {
+  if (!props.song || lyricsFetching.value) return
+  lyricsFetching.value = true
+  try {
+    const r = await fetchOnlineLyrics({
+      title: form.value.title.trim() || props.song.title,
+      artist: form.value.artist.trim() || props.song.artist,
+      album: form.value.album.trim() || props.song.album,
+      duration: props.song.duration,
+    })
+    const text = r?.syncedLyrics || r?.plainLyrics || ''
+    if (text) {
+      form.value.lyrics = text
+      ElMessage.success('已获取在线歌词，保存后写入文件')
+    } else {
+      ElMessage.warning('未找到匹配的在线歌词')
+    }
+  } catch (e) {
+    console.error('[MetadataEditor] 在线歌词获取失败:', e)
+    ElMessage.error('在线歌词获取失败，请检查网络')
+  } finally {
+    lyricsFetching.value = false
+  }
 }
 
 /** 移除封面 */
@@ -148,15 +195,12 @@ async function save() {
             <span class="ml-1">更换封面</span>
           </div>
         </div>
-        <el-button
-          v-if="hasCover"
-          text
-          size="small"
-          type="danger"
-          @click="removeCover"
-        >
-          移除封面
-        </el-button>
+        <div v-if="hasCover" class="flex gap-1">
+          <el-button text size="small" @click="recropCover">裁剪</el-button>
+          <el-button text size="small" type="danger" @click="removeCover">
+            移除封面
+          </el-button>
+        </div>
         <input
           ref="fileInputRef"
           type="file"
@@ -190,7 +234,22 @@ async function save() {
 
     <!-- 歌词编辑 -->
     <el-form v-if="song" :model="form" label-position="top" class="mt-2">
-      <el-form-item label="歌词">
+      <el-form-item>
+        <template #label>
+          <div class="flex w-full items-center justify-between">
+            <span>歌词</span>
+            <el-button
+              text
+              size="small"
+              type="primary"
+              :loading="lyricsFetching"
+              @click="fetchLyrics"
+            >
+              <el-icon v-if="!lyricsFetching"><Download /></el-icon>
+              <span class="ml-1">获取在线歌词</span>
+            </el-button>
+          </div>
+        </template>
         <el-input
           v-model="form.lyrics"
           type="textarea"
@@ -205,5 +264,12 @@ async function save() {
       <el-button @click="visible = false">取消</el-button>
       <el-button type="primary" :loading="saving" @click="save">保存</el-button>
     </template>
+
+    <!-- 封面裁剪弹窗 -->
+    <CoverCropper
+      v-model="cropperVisible"
+      :image="cropSource"
+      @cropped="onCropped"
+    />
   </el-dialog>
 </template>

@@ -319,6 +319,17 @@ async fn get_lyrics(
     Ok(lyrics::get_lyrics(&file_path, &title, &artist, &album, duration).await)
 }
 
+/// 仅在线获取歌词（元数据编辑器手动触发，跳过内嵌/本地 .lrc）
+#[tauri::command]
+async fn get_online_lyrics(
+    title: String,
+    artist: String,
+    album: String,
+    duration: u64,
+) -> Result<LyricsResult, String> {
+    Ok(lyrics::get_online_lyrics(&title, &artist, &album, duration).await)
+}
+
 // ── 数据同步 ──
 
 /// 上传同步数据（保存到本地 AppData，可选 AES-128-GCM 加密）
@@ -389,6 +400,7 @@ pub fn run() {
             get_cover_data_url,
             get_embedded_lyrics,
             get_lyrics,
+            get_online_lyrics,
             sync_upload,
             sync_download,
             sync_get_backup_info,

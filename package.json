@@ -17,6 +17,7 @@
     "@tauri-apps/plugin-fs": "~2.5.1",
     "@tauri-apps/plugin-opener": "^2",
     "@vueuse/core": "^11.3.0",
+    "cropperjs": "^1.6.2",
     "element-plus": "^2.14.3",
     "howler": "^2.2.4",
     "idb": "^8.0.0",

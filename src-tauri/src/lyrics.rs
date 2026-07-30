@@ -132,6 +132,22 @@ fn parse_lrclib_json(json: serde_json::Value, source: &str) -> LyricsResult {
     }
 }
 
+/// 仅在线获取歌词（供元数据编辑器手动触发，跳过内嵌/本地 .lrc）
+pub async fn get_online_lyrics(
+    title: &str,
+    artist: &str,
+    album: &str,
+    duration: u64,
+) -> LyricsResult {
+    fetch_online(title, artist, album, duration)
+        .await
+        .unwrap_or(LyricsResult {
+            source: "none".to_string(),
+            synced_lyrics: None,
+            plain_lyrics: None,
+        })
+}
+
 /// 组合入口：按优先级依次尝试 内嵌 → 本地 .lrc → 在线 lrclib
 pub async fn get_lyrics(
     file_path: &str,

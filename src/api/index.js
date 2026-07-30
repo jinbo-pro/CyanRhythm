@@ -173,6 +173,20 @@ export function getLyrics(song) {
   })
 }
 
+/**
+ * 仅在线获取歌词（跳过内嵌/本地 .lrc，供元数据编辑器手动触发）
+ * @param {{title:string, artist:string, album:string, duration:number}} params
+ * @returns {Promise<{source:string, syncedLyrics:string|null, plainLyrics:string|null}>}
+ */
+export function fetchOnlineLyrics({ title, artist, album, duration }) {
+  return invoke('get_online_lyrics', {
+    title: title || '',
+    artist: artist || '',
+    album: album || '',
+    duration: Math.round(duration || 0),
+  })
+}
+
 // ═══════════════════════════════════════════════
 //  健康检查（本地应用始终健康）
 // ═══════════════════════════════════════════════

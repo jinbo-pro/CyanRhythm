@@ -1,95 +1,66 @@
-import Mousetrap from 'mousetrap'
+import { register, unregisterAll } from '@tauri-apps/plugin-global-shortcut'
 import { useSettingsStore, SHORTCUT_ACTIONS } from '../stores/settings.js'
 import { usePlayerStore } from '../stores/player.js'
 
 /**
- * 将 keydown 事件转换为 mousetrap 风格的组合字符串
- * 例如：Ctrl+Shift+P => 'ctrl+shift+p'，空格 => 'space'，左方向键 => 'left'
+ * 将 DOM keydown 事件转换为 Tauri global-shortcut 格式的组合字符串
+ * 例如：Ctrl+Shift+P => 'Control+Shift+P'，空格 => 'Space'，左方向键 => 'Left'
  * @param {KeyboardEvent} e
- * @returns {string|null} mousetrap 组合字符串；纯修饰键按下时返回 null
+ * @returns {string|null} Tauri 快捷键字符串；纯修饰键按下时返回 null
  */
 export function keyEventToCombo(e) {
   const parts = []
-  if (e.ctrlKey) parts.push('ctrl')
-  if (e.altKey) parts.push('alt')
-  if (e.shiftKey) parts.push('shift')
-  if (e.metaKey) parts.push('meta')
+  if (e.ctrlKey) parts.push('Control')
+  if (e.altKey) parts.push('Alt')
+  if (e.shiftKey) parts.push('Shift')
+  if (e.metaKey) parts.push('Super')
 
-  // 仅按下修饰键（未按主键）时不构成完整组合
   const key = e.key
-  if (
-    key === 'Control' ||
-    key === 'Alt' ||
-    key === 'Shift' ||
-    key === 'Meta'
-  ) {
-    return null
+  if (['Control', 'Alt', 'Shift', 'Meta'].includes(key)) return null
+
+  const KEY_MAP = {
+    ' ': 'Space',
+    ArrowLeft: 'Left',
+    ArrowRight: 'Right',
+    ArrowUp: 'Up',
+    ArrowDown: 'Down',
+    Enter: 'Return',
+    Escape: 'Escape',
+    Backspace: 'Backspace',
+    Tab: 'Tab',
+    Delete: 'Delete',
+    Insert: 'Insert',
   }
 
-  let main
-  switch (key) {
-    case ' ':
-      main = 'space'
-      break
-    case 'ArrowLeft':
-      main = 'left'
-      break
-    case 'ArrowRight':
-      main = 'right'
-      break
-    case 'ArrowUp':
-      main = 'up'
-      break
-    case 'ArrowDown':
-      main = 'down'
-      break
-    case 'Enter':
-      main = 'enter'
-      break
-    case 'Escape':
-      main = 'esc'
-      break
-    case 'Backspace':
-      main = 'backspace'
-      break
-    case 'Tab':
-      main = 'tab'
-      break
-    case 'Delete':
-      main = 'del'
-      break
-    case 'Insert':
-      main = 'ins'
-      break
-    default:
-      main = key.length === 1 ? key.toLowerCase() : key.toLowerCase()
+  let main = KEY_MAP[key]
+  if (!main) {
+    main = key.length === 1 ? key.toUpperCase() : key
   }
   parts.push(main)
   return parts.join('+')
 }
 
-/** mousetrap 组合键 -> 人类可读文本的映射表 */
+/** Tauri 快捷键 -> 人类可读文本的映射表 */
 const DISPLAY_MAP = {
-  space: 'Space',
-  left: '←',
-  right: '→',
-  up: '↑',
-  down: '↓',
-  enter: 'Enter',
-  esc: 'Esc',
-  backspace: 'Backspace',
-  tab: 'Tab',
-  del: 'Delete',
-  ins: 'Insert',
-  ctrl: 'Ctrl',
-  alt: 'Alt',
-  shift: 'Shift',
-  meta: 'Cmd',
+  Space: 'Space',
+  Left: '←',
+  Right: '→',
+  Up: '↑',
+  Down: '↓',
+  Return: 'Enter',
+  Escape: 'Esc',
+  Backspace: 'Backspace',
+  Tab: 'Tab',
+  Delete: 'Delete',
+  Insert: 'Insert',
+  Control: 'Ctrl',
+  Alt: 'Alt',
+  Shift: 'Shift',
+  Super: 'Win',
 }
 
 /**
- * 将 mousetrap 组合字符串格式化为人类可读文本
- * 例如：'ctrl+shift+p' => 'Ctrl+Shift+P'
+ * 将 Tauri 快捷键字符串格式化为人类可读文本
  * @param {string} combo
  * @returns {string}
  */
@@ -97,25 +68,21 @@ export function formatCombo(combo) {
   if (!combo) return '未设置'
   return combo
     .split('+')
-    .map((part) => {
-      const lower = part.toLowerCase()
-      if (DISPLAY_MAP[lower]) return DISPLAY_MAP[lower]
-      if (lower.length === 1) return part.toUpperCase()
-      return part
-    })
+    .map((part) => DISPLAY_MAP[part] || part)
     .join(' + ')
 }
 
-let bound = false
-
 /**
  * 全局快捷键绑定 composable
- * 读取 settings.shortcuts 配置并绑定到 player 控制方法
- * 每次调用 bind() 会先 unbind 再重新绑定，便于配置变更后刷新
+ * 基于 tauri-plugin-global-shortcut，快捷键在系统级别生效（无需窗口聚焦）
+ * 每次调用 bind() 会先 unregisterAll 再重新注册，便于配置变更后刷新
  */
 export function useShortcuts() {
   const settings = useSettingsStore()
   const player = usePlayerStore()
+
+  // 串行锁：避免快速连续修改快捷键时多个 bind() 并发导致注册竞态
+  let bindChain = Promise.resolve()
 
   /** 各动作对应的处理函数 */
   const handlers = {
@@ -124,27 +91,47 @@ export function useShortcuts() {
     [SHORTCUT_ACTIONS.NEXT]: () => player.next(),
   }
 
-  /** 解绑全部已绑定快捷键 */
-  function unbind() {
-    Object.values(SHORTCUT_ACTIONS).forEach((action) => {
-      const combo = settings.shortcuts[action]
-      if (combo) Mousetrap.unbind(combo)
-    })
-    bound = false
+  /** 解绑全部已注册的全局快捷键 */
+  async function unbind() {
+    try {
+      await unregisterAll()
+    } catch (e) {
+      console.error('[shortcuts] unregisterAll failed:', e)
+    }
   }
 
-  /** 按当前 settings.shortcuts 配置绑定全局快捷键 */
-  function bind() {
-    unbind()
-    Object.values(SHORTCUT_ACTIONS).forEach((action) => {
-      const combo = settings.shortcuts[action]
-      if (combo) Mousetrap.bind(combo, (e) => {
-        e.preventDefault()
-        handlers[action]()
-      })
+  /** 按当前 settings.shortcuts 配置注册全局快捷键，返回注册失败的列表 */
+  async function bind() {
+    // 串行化：每次调用排队等待上一次完成
+    const run = bindChain.then(async () => {
+      await unbind()
+      const failed = []
+      for (const action of Object.values(SHORTCUT_ACTIONS)) {
+        const combo = settings.shortcuts[action]
+        if (!combo) continue
+        try {
+          // handler 收到 ShortcutEvent，包含 state（Pressed/Released）
+          // 仅在 Pressed 时触发动作，避免按下+释放重复执行
+          await register(combo, (event) => {
+            if (event?.state === 'Pressed') handlers[action]?.()
+          })
+        } catch (e) {
+          console.error(`[shortcuts] 注册失败 "${combo}":`, e)
+          failed.push(combo)
+        }
+      }
+      // 系统级注册失败提示用户（如被其他应用占用）
+      if (failed.length) {
+        ElMessage.error(
+          `快捷键注册失败：${failed.map(formatCombo).join('、')}，可能被其他程序占用`
+        )
+      }
+      return { failed }
     })
-    bound = true
+    // 保持链不断裂：即使某次出错也不影响后续调用
+    bindChain = run.catch(() => {})
+    return run
   }
 
-  return { bind, unbind, isBound: () => bound }
+  return { bind, unbind }
 }

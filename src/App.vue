@@ -16,21 +16,16 @@ const { folderPickerOpen, startScan } = useImport()
 const settingsOpen = ref(false)
 const detailOpen = ref(false)
 
-// 全局快捷键：settings 加载完成后首次绑定；之后 settings.shortcuts 变更自动重绑
+// 全局快捷键：settings 在 mount 前已加载完毕（loaded 已 true），
+// 所以用 immediate 在 watch 创建时立即绑定；之后 shortcuts 变更自动重绑
 const settingsStore = useSettingsStore()
 const { bind: bindShortcuts, unbind: unbindShortcuts } = useShortcuts()
-watch(
-  () => settingsStore.loaded,
-  (loaded) => {
-    if (loaded) bindShortcuts()
-  }
-)
 watch(
   () => settingsStore.shortcuts,
   () => {
     if (settingsStore.loaded) bindShortcuts()
   },
-  { deep: true }
+  { deep: true, immediate: true }
 )
 
 // 通过全局事件总线监听打开设置

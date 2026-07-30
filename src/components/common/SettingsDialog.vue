@@ -1,7 +1,7 @@
 <script setup>
 import { ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
-import { useSettingsStore, SHORTCUT_ACTIONS, SHORTCUT_LABELS } from '../../stores/settings.js'
+import { useSettingsStore, SHORTCUT_ACTIONS, SHORTCUT_LABELS, DEFAULT_SHORTCUTS } from '../../stores/settings.js'
 import ShortcutInput from './ShortcutInput.vue'
 import { loadSongs, saveSongs } from '../../db/repositories/library.js'
 import {
@@ -89,9 +89,12 @@ async function loadBackupInfo() {
   }
 }
 
-// 弹窗打开时自动加载备份信息
+// 弹窗打开时自动加载备份信息 & 同步快捷键草稿
 watch(visible, (v) => {
-  if (v) loadBackupInfo()
+  if (v) {
+    loadBackupInfo()
+    draftShortcuts.value = { ...settings.shortcuts }
+  }
 })
 
 /** 打开凭证弹窗，自动填充已保存的用户名密码（优先已保存，否则回退系统用户名） */
@@ -246,17 +249,30 @@ function goStats() {
 const shortcutActions = Object.values(SHORTCUT_ACTIONS)
 const shortcutLabels = SHORTCUT_LABELS
 
-/** 某个快捷键变更时：冲突检测后写入 store（自动持久化与重绑） */
+// 快捷键草稿：暂存用户修改，点击「保存」后才批量应用到 store
+const draftShortcuts = ref({ ...settings.shortcuts })
+
+/** 草稿内冲突检测后更新草稿（不立即写入 store） */
 function onShortcutChange(action, combo) {
-  // 冲突检测：同一组合不能绑定到多个动作
   const conflict = shortcutActions.find(
-    (a) => a !== action && settings.shortcuts[a] === combo
+    (a) => a !== action && draftShortcuts.value[a] === combo
   )
   if (conflict) {
     ElMessage.warning(`该快捷键已用于「${shortcutLabels[conflict]}」，请换一个`)
     return
   }
-  settings.setShortcut(action, combo)
+  draftShortcuts.value = { ...draftShortcuts.value, [action]: combo }
+}
+
+/** 将草稿批量保存到 store 并应用 */
+function saveShortcuts() {
+  settings.applyShortcuts(draftShortcuts.value)
+  ElMessage.success('快捷键已保存')
+}
+
+/** 重置草稿为默认值（不立即写入 store） */
+function resetDraftShortcuts() {
+  draftShortcuts.value = { ...DEFAULT_SHORTCUTS }
 }
 function onRefresh() {
   location.reload()
@@ -353,7 +369,7 @@ function onRefresh() {
       <!-- 快捷键 -->
       <el-collapse-item name="shortcuts" title="快捷键">
         <div class="mb-3 flex items-center justify-end">
-          <el-button text size="small" @click="settings.resetShortcuts()">重置默认</el-button>
+          <el-button text size="small" @click="resetDraftShortcuts">重置默认</el-button>
         </div>
         <div class="space-y-3">
           <div
@@ -365,10 +381,13 @@ function onRefresh() {
               <div class="text-sm font-medium">{{ shortcutLabels[action] }}</div>
             </div>
             <ShortcutInput
-              :model-value="settings.shortcuts[action]"
+              :model-value="draftShortcuts[action]"
               @update:model-value="onShortcutChange(action, $event)"
             />
           </div>
+        </div>
+        <div class="mt-4 flex justify-end">
+          <el-button type="primary" size="small" @click="saveShortcuts">保存</el-button>
         </div>
       </el-collapse-item>
 

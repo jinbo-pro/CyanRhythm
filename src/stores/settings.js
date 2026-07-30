@@ -25,11 +25,46 @@ export const SHORTCUT_ACTIONS = {
   NEXT: 'next', // 下一曲
 }
 
-/** 快捷键默认绑定（mousetrap 组合字符串） */
+/**
+ * 将旧的 mousetrap 格式组合键迁移为 Tauri global-shortcut 格式
+ * 例如：'ctrl+shift+p' => 'Control+Shift+P'，'space' => 'Space'
+ * 对已是 Tauri 格式的组合键是幂等的（无副作用）
+ */
+const MIGRATE_MAP = {
+  ctrl: 'Control',
+  alt: 'Alt',
+  shift: 'Shift',
+  meta: 'Super',
+  space: 'Space',
+  left: 'Left',
+  right: 'Right',
+  up: 'Up',
+  down: 'Down',
+  enter: 'Return',
+  esc: 'Escape',
+  backspace: 'Backspace',
+  tab: 'Tab',
+  del: 'Delete',
+  ins: 'Insert',
+}
+export function migrateCombo(combo) {
+  if (!combo) return ''
+  return combo
+    .split('+')
+    .map((part) => {
+      const mapped = MIGRATE_MAP[part.toLowerCase()]
+      if (mapped) return mapped
+      // 单字符按键统一转大写
+      return part.length === 1 ? part.toUpperCase() : part
+    })
+    .join('+')
+}
+
+/** 快捷键默认绑定（Tauri global-shortcut 格式） */
 export const DEFAULT_SHORTCUTS = {
-  [SHORTCUT_ACTIONS.PLAY_PAUSE]: 'space',
-  [SHORTCUT_ACTIONS.PREV]: 'left',
-  [SHORTCUT_ACTIONS.NEXT]: 'right',
+  [SHORTCUT_ACTIONS.PLAY_PAUSE]: 'Space',
+  [SHORTCUT_ACTIONS.PREV]: 'Left',
+  [SHORTCUT_ACTIONS.NEXT]: 'Right',
 }
 
 /** 快捷键中文描述 */
@@ -53,7 +88,7 @@ export const useSettingsStore = defineStore('settings', {
     showAlbum: true, // 是否显示专辑列
     showIndex: true, // 是否显示序号列
     pixelIcon: false, // 无封面时是否用名称生成像素图标
-    // 快捷键配置：动作 -> mousetrap 组合字符串（如 'space'、'ctrl+right'）
+    // 快捷键配置：动作 -> Tauri global-shortcut 格式（如 'Space'、'Control+Right'）
     shortcuts: { ...DEFAULT_SHORTCUTS },
     // EQ 均衡器配置
     eqEnabled: false, // 是否启用 EQ
@@ -72,8 +107,12 @@ export const useSettingsStore = defineStore('settings', {
       this.showAlbum = data.showAlbum ?? true
       this.showIndex = data.showIndex ?? true
       this.pixelIcon = data.pixelIcon ?? false
-      // 合并快捷键：以保存值为准，缺失项回退到默认
-      this.shortcuts = { ...DEFAULT_SHORTCUTS, ...(data.shortcuts || {}) }
+      // 合并快捷键：迁移旧 mousetrap 格式，缺失项回退到默认
+      const savedShortcuts = {}
+      for (const [k, v] of Object.entries(data.shortcuts || {})) {
+        savedShortcuts[k] = migrateCombo(v)
+      }
+      this.shortcuts = { ...DEFAULT_SHORTCUTS, ...savedShortcuts }
       // EQ 均衡器配置
       this.eqEnabled = data.eqEnabled ?? false
       this.eqGains = Array.isArray(data.eqGains) && data.eqGains.length === 10
@@ -122,7 +161,7 @@ export const useSettingsStore = defineStore('settings', {
       const idx = order.indexOf(this.playMode)
       this.setPlayMode(order[(idx + 1) % order.length])
     },
-    /** 设置某个动作的快捷键（combo 为 mousetrap 组合字符串） */
+    /** 设置某个动作的快捷键（combo 为 Tauri global-shortcut 格式字符串） */
     setShortcut(action, combo) {
       this.shortcuts = { ...this.shortcuts, [action]: combo }
       this.persist()
@@ -130,6 +169,11 @@ export const useSettingsStore = defineStore('settings', {
     /** 重置全部快捷键为默认 */
     resetShortcuts() {
       this.shortcuts = { ...DEFAULT_SHORTCUTS }
+      this.persist()
+    },
+    /** 批量应用快捷键（设置页草稿保存时调用，一次性替换避免多次重绑） */
+    applyShortcuts(map) {
+      this.shortcuts = { ...map }
       this.persist()
     },
     setTheme(theme) {

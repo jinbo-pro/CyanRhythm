@@ -89,6 +89,7 @@ export const useSettingsStore = defineStore('settings', {
     showIndex: true, // 是否显示序号列
     showFileName: false, // 是否显示文件名列
     pixelIcon: false, // 无封面时是否用名称生成像素图标
+    waveformProgress: false, // 播放详情页是否使用波形热力图进度条
     // 快捷键配置：动作 -> Tauri global-shortcut 格式（如 'Space'、'Control+Right'）
     shortcuts: { ...DEFAULT_SHORTCUTS },
     // EQ 均衡器配置
@@ -109,6 +110,7 @@ export const useSettingsStore = defineStore('settings', {
       this.showIndex = data.showIndex ?? true
       this.showFileName = data.showFileName ?? false
       this.pixelIcon = data.pixelIcon ?? false
+      this.waveformProgress = data.waveformProgress ?? false
       // 合并快捷键：迁移旧 mousetrap 格式，缺失项回退到默认
       const savedShortcuts = {}
       for (const [k, v] of Object.entries(data.shortcuts || {})) {
@@ -139,6 +141,7 @@ export const useSettingsStore = defineStore('settings', {
           showIndex: this.showIndex,
           showFileName: this.showFileName,
           pixelIcon: this.pixelIcon,
+          waveformProgress: this.waveformProgress,
           shortcuts: { ...this.shortcuts },
           eqEnabled: this.eqEnabled,
           eqGains: [...this.eqGains],

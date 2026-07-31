@@ -1,7 +1,7 @@
 import { openDB, deleteDB } from 'idb'
 
 const DB_NAME = 'local-music'
-const DB_VERSION = 1
+const DB_VERSION = 2
 
 /**
  * IndexedDB 数据库句柄（单例）
@@ -12,19 +12,31 @@ const DB_VERSION = 1
  *  - library：导入的歌曲列表（以单一 key 存储全部歌曲数组）
  *  - stats：播放统计（keyPath=id，记录每首歌的播放次数与累计时长）
  *  - lyrics：歌词缓存（keyPath=songId）
+ *  - waveforms：波形热力图缓存（keyPath=songId，预渲染整曲瞬时响度）
  */
 let dbPromise = null
 
 export function getDB() {
   if (!dbPromise) {
     dbPromise = openDB(DB_NAME, DB_VERSION, {
-      upgrade(db) {
-        db.createObjectStore('playlists', { keyPath: 'id' })
-        db.createObjectStore('settings')
-        db.createObjectStore('progress')
-        db.createObjectStore('library')
-        db.createObjectStore('stats', { keyPath: 'id' })
-        db.createObjectStore('lyrics', { keyPath: 'songId' })
+      // 版本迁移：每次升级只新增该版本引入的 store
+      // 全新数据库（oldVersion=0）会从 case 0 顺序执行，创建全部 store
+      upgrade(db, oldVersion) {
+        switch (oldVersion) {
+          case 0:
+            db.createObjectStore('playlists', { keyPath: 'id' })
+            db.createObjectStore('settings')
+            db.createObjectStore('progress')
+            db.createObjectStore('library')
+            db.createObjectStore('stats', { keyPath: 'id' })
+            db.createObjectStore('lyrics', { keyPath: 'songId' })
+          // fall through
+          case 1:
+            db.createObjectStore('waveforms', { keyPath: 'songId' })
+          // fall through
+          case 2:
+            break
+        }
       },
     })
   }

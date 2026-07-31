@@ -11,6 +11,7 @@ import PlayModeIcon from '../common/PlayModeIcon.vue'
 import SongDetailDialog from '../common/SongDetailDialog.vue'
 import MetadataEditor from '../common/MetadataEditor.vue'
 import LyricsPanel from './LyricsPanel.vue'
+import WaveformBar from './WaveformBar.vue'
 
 const props = defineProps({
   modelValue: { type: Boolean, default: false },
@@ -262,12 +263,21 @@ onBeforeUnmount(() => {
           </el-tooltip>
         </div>
 
-        <!-- 进度条 -->
+        <!-- 进度条：开启波形进度条时替换为波形热力图 -->
         <div class="flex w-full max-w-[640px] items-center gap-3">
           <span class="w-10 shrink-0 text-center text-xs tabular-nums text-white/50">
             {{ formatTime(player.seek) }}
           </span>
+          <WaveformBar
+            v-if="settings.waveformProgress && hasSong"
+            class="flex-1"
+            :song="player.currentSong"
+            :current-time="player.seek"
+            :duration="player.duration || 0"
+            @seek="onSeek"
+          />
           <el-slider
+            v-else
             class="detail-slider flex-1"
             :model-value="player.seek"
             :min="0"

@@ -21,6 +21,16 @@ let dataArray = null
 /** 记录已连接的 audio 元素，避免重复创建 MediaElementSource（每个元素只能创建一次） */
 const connectedNodes = new WeakSet()
 
+/**
+ * 获取全局共享的 AudioContext（即 Howler 创建并复用的上下文）
+ * 频谱可视化、EQ 均衡器、波形预渲染统一使用此上下文，避免重复创建音频上下文。
+ * @returns {AudioContext | null}
+ */
+export function getAudioContext() {
+  if (Howler.ctx && Howler.ctx.state !== 'closed') return Howler.ctx
+  return null
+}
+
 /** 懒加载创建 AnalyserNode（仅创建一次，全局共享） */
 function ensureAnalyser() {
   if (analyser) return analyser

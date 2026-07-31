@@ -85,6 +85,15 @@ function onRefresh() {
           </div>
           <el-switch v-model="settings.pixelIcon" @change="settings.persist()" />
         </div>
+        <div class="flex items-center justify-between gap-4">
+          <div class="min-w-0">
+            <div class="text-sm font-medium">波形进度条</div>
+            <div class="mt-0.5 text-xs text-neutral-400">
+              播放详情页底部进度条改为音频波形热力图，高度反映瞬时响度，可拖拽跳转
+            </div>
+          </div>
+          <el-switch v-model="settings.waveformProgress" @change="settings.persist()" />
+        </div>
       </div>
 
       <el-divider class="!my-2" />

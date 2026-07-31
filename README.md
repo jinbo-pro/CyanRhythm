@@ -1,4 +1,4 @@
-# 青律 CyanRhythm（Tauri + Vue 3 本地音乐播放器）
+# 清音 CyanRhythm（Tauri + Vue 3 本地音乐播放器）
 
 一款**纯本地运行的桌面音乐播放器**，无云端服务、不联网，仅访问用户本地音频文件。采用 Tauri 2 将 Rust 原生后端与 Vue 3 前端打包为单一桌面应用，前端基于 IndexedDB 持久化全部数据。
 

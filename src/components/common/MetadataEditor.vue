@@ -1,6 +1,8 @@
 <script setup>
 import { ref, watch, computed } from 'vue'
 import { updateMetadata, coverUrl, getEmbeddedLyrics, fetchOnlineLyrics } from '@/api/index.js'
+import { deleteLyricsCache } from '@/db/repositories/lyrics.js'
+import { eventBus, EVENTS } from '@/utils/eventBus.js'
 import CoverCropper from './CoverCropper.vue'
 import { clickUploadFile, readFile } from '@/utils/common.js'
 
@@ -25,6 +27,8 @@ const form = ref({
 // 封面 data URL（预览 + 写入用）；coverChanged 标记是否被用户修改过
 const coverData = ref('')
 const coverChanged = ref(false)
+// 弹窗打开时的初始歌词，用于保存时判断歌词是否被修改（决定是否刷新歌词缓存）
+const originalLyrics = ref('')
 
 const saving = ref(false)
 const coverLoading = ref(false)
@@ -66,6 +70,7 @@ watch(visible, async (open) => {
 
   // 歌词：仅加载内嵌歌词供编辑（不触发在线请求）
   form.value.lyrics = (await getEmbeddedLyrics(props.song.fileRelPath)) || ''
+  originalLyrics.value = form.value.lyrics
 })
 
 /** 文件选择 */
@@ -146,6 +151,12 @@ async function save() {
       coverBase64: coverChanged.value ? coverData.value || null : null,
     })
     emit('saved', updated)
+    // 歌词被修改时，清除缓存并通知歌词面板重新加载
+    // （useLyrics 以 id 为依赖且命中旧缓存，id 不变不会自动刷新）
+    if (form.value.lyrics !== originalLyrics.value) {
+      await deleteLyricsCache(updated.id)
+      eventBus.emit(EVENTS.LYRICS_UPDATED, updated.id)
+    }
     visible.value = false
   } catch (e) {
     console.error('[MetadataEditor] 保存失败:', e)

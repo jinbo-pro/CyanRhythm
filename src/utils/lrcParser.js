@@ -54,3 +54,26 @@ export function findActiveIndex(lines, currentTime) {
   }
   return ans
 }
+
+/** 将秒数格式化为 LRC 时间标签 mm:ss.xxx */
+function formatLRCTime(totalSec) {
+  if (totalSec < 0) totalSec = 0
+  const totalMs = Math.round(totalSec * 1000)
+  const m = Math.floor(totalMs / 60000)
+  const s = Math.floor((totalMs % 60000) / 1000)
+  const ms = totalMs % 1000
+  return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}.${String(ms).padStart(3, '0')}`
+}
+
+/**
+ * 将歌词行数组序列化为 LRC 文本（支持把时间偏移烘焙进时间轴）
+ * @param {{ time: number, text: string }[]} lines 歌词行（time 单位：秒）
+ * @param {number} [offsetMs=0] 要烘焙进时间轴的偏移量（毫秒），正数推迟、负数提前
+ * @returns {string} LRC 格式文本
+ */
+export function buildLRC(lines, offsetMs = 0) {
+  const offsetSec = offsetMs / 1000
+  return lines
+    .map((line) => `[${formatLRCTime(line.time + offsetSec)}]${line.text}`)
+    .join('\n')
+}

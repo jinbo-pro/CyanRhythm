@@ -9,4 +9,5 @@ export const EVENTS = {
   OPEN_SETTINGS: 'open-settings',
   OPEN_IMPORT: 'open-import',
   LOCATE_CURRENT: 'locate-current',
+  LYRICS_UPDATED: 'lyrics-updated',
 }

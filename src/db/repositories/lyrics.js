@@ -21,6 +21,12 @@ export async function saveLyricsCache(songId, data) {
   await db.put('lyrics', { songId, ...data, fetchedAt: Date.now() })
 }
 
+/** 删除指定歌曲的歌词缓存（元数据编辑保存后调用，强制下次重新读取） */
+export async function deleteLyricsCache(songId) {
+  const db = await getDB()
+  await db.delete('lyrics', songId)
+}
+
 /** 仅更新某首歌的歌词时间偏移量（毫秒） */
 export async function updateLyricsOffset(songId, offset) {
   const db = await getDB()

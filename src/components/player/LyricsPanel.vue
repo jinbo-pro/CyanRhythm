@@ -11,7 +11,9 @@ const {
   hasAnyLyrics,
   activeIndex,
   offset,
+  saving,
   adjustOffset,
+  saveLyricsToFile,
 } = useLyrics()
 
 const viewportRef = ref(null)
@@ -65,6 +67,14 @@ function lineClass(idx) {
   if (dist === 1) return 'lyric-near'
   if (dist === 2) return 'lyric-mid'
   return 'lyric-far'
+}
+
+/** 将时间偏移烘焙进歌词并写入音频文件 */
+async function saveLyrics() {
+  if (saving.value) return
+  const ok = await saveLyricsToFile()
+  if (ok) ElMessage.success('歌词已保存到文件')
+  else ElMessage.error('歌词保存失败')
 }
 </script>
 
@@ -156,6 +166,16 @@ function lineClass(idx) {
           @click="adjustOffset(-offset)"
         >
           重置
+        </el-button>
+        <el-button
+          v-if="offset !== 0"
+          text
+          size="small"
+          :loading="saving"
+          class="!text-emerald-400/80 hover:!text-emerald-300"
+          @click="saveLyrics"
+        >
+          保存
         </el-button>
       </div>
     </div>

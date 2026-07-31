@@ -146,7 +146,7 @@ function songCount(pl) {
         </el-button>
       </el-tooltip>
       <el-tooltip :content="isDark ? '切换到浅色' : '切换到深色'" placement="top">
-        <el-button text circle @click="toggle">
+        <el-button text circle @click="toggle($event)">
           <el-icon :size="18"><Sunny v-if="isDark" /><Moon v-else /></el-icon>
         </el-button>
       </el-tooltip>

@@ -51,6 +51,13 @@ body {
   background: rgba(255, 255, 255, 0.35);
 }
 
+/* 暗黑模式切换扩散动画：禁用 View Transitions 默认交叉淡入，改用 clip-path 圆形扩散 */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+
 /* 视图过渡 */
 .fade-enter-active,
 .fade-leave-active {

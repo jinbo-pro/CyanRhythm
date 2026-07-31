@@ -93,8 +93,12 @@ async function main() {
   const rl = createInterface({ input, output });
   let version;
 
+  const currentVersion = readJson("package.json").version;
+
   try {
-    version = normalizeVersion(await rl.question("Version, for example 1.0.0: "));
+    version = normalizeVersion(
+      await rl.question(`Current version is ${currentVersion}, new version: `),
+    );
   } finally {
     rl.close();
   }

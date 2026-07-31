@@ -2,6 +2,7 @@
 import { ref, watch, computed } from 'vue'
 import { updateMetadata, coverUrl, getEmbeddedLyrics, fetchOnlineLyrics } from '@/api/index.js'
 import CoverCropper from './CoverCropper.vue'
+import { clickUploadFile, readFile } from '@/utils/common.js'
 
 const props = defineProps({
   /** 当前编辑的歌曲对象 */
@@ -67,23 +68,11 @@ watch(visible, async (open) => {
   form.value.lyrics = (await getEmbeddedLyrics(props.song.fileRelPath)) || ''
 })
 
-/** 触发文件选择 */
-function pickCover() {
-  fileInputRef.value?.click()
-}
-
-/** 文件选择后读取为 data URL 并进入裁剪 */
-function onCoverFile(e) {
-  const file = e.target.files?.[0]
-  if (!file) return
-  const reader = new FileReader()
-  reader.onload = () => {
-    cropSource.value = reader.result
-    cropperVisible.value = true
-  }
-  reader.readAsDataURL(file)
-  // 清空 input 的 value，允许重复选择同一文件
-  e.target.value = ''
+/** 文件选择 */
+async function pickCover() {
+  const [file] = await clickUploadFile(false, 'image/jpeg,image/png,image/webp')
+  cropSource.value = await readFile(file, 'readAsDataURL')
+  cropperVisible.value = true
 }
 
 /** 重新裁剪当前封面 */
@@ -126,6 +115,12 @@ async function fetchLyrics() {
   } finally {
     lyricsFetching.value = false
   }
+}
+
+async function pickLyricsFile() {
+  const [file] = await clickUploadFile(false, '.lrc,.txt,text/plain')
+  const text = await readFile(file, 'readAsText')
+  form.value.lyrics = text
 }
 
 /** 移除封面 */
@@ -201,13 +196,6 @@ async function save() {
             移除封面
           </el-button>
         </div>
-        <input
-          ref="fileInputRef"
-          type="file"
-          accept="image/jpeg,image/png,image/webp"
-          class="hidden"
-          @change="onCoverFile"
-        />
       </div>
 
       <!-- 表单区域 -->
@@ -238,16 +226,27 @@ async function save() {
         <template #label>
           <div class="flex w-full items-center justify-between">
             <span>歌词</span>
-            <el-button
-              text
-              size="small"
-              type="primary"
-              :loading="lyricsFetching"
-              @click="fetchLyrics"
-            >
-              <el-icon v-if="!lyricsFetching"><Download /></el-icon>
-              <span class="ml-1">获取在线歌词</span>
-            </el-button>
+            <div class="flex items-center gap-1">
+              <el-button
+                text
+                size="small"
+                type="primary"
+                :loading="lyricsFetching"
+                @click="fetchLyrics"
+              >
+                <el-icon v-if="!lyricsFetching"><Download /></el-icon>
+                <span class="ml-1">获取在线歌词</span>
+              </el-button>
+              <el-button
+                text
+                size="small"
+                type="primary"
+                @click="pickLyricsFile"
+              >
+                <el-icon><Upload /></el-icon>
+                <span class="ml-1">上传歌词文件</span>
+              </el-button>
+            </div>
           </div>
         </template>
         <el-input

@@ -5,6 +5,7 @@ import AppConfigPanel from './AppConfigPanel.vue'
 import ShortcutsPanel from './ShortcutsPanel.vue'
 import SyncPanel from './SyncPanel.vue'
 import DangerPanel from './DangerPanel.vue'
+import AboutPanel from './AboutPanel.vue'
 
 const visible = defineModel({ type: Boolean, default: false })
 
@@ -27,6 +28,7 @@ const activeNames = ref(['general'])
       <ShortcutsPanel :open="visible" />
       <SyncPanel :open="visible" />
       <DangerPanel />
+      <AboutPanel />
     </el-collapse>
 
     <template #footer>

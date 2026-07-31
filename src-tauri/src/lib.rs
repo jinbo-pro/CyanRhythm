@@ -262,6 +262,17 @@ fn get_file_info(file_path: String) -> Result<FileInfo, String> {
     })
 }
 
+/// 删除指定音频文件。
+#[tauri::command]
+fn delete_audio_file(file_path: String) -> Result<(), String> {
+    let path = std::path::Path::new(&file_path);
+    let metadata = std::fs::metadata(path).map_err(|e| format!("无法读取文件信息：{e}"))?;
+    if !metadata.is_file() {
+        return Err(format!("路径不是文件：{}", file_path));
+    }
+    std::fs::remove_file(path).map_err(|e| format!("删除文件失败：{e}"))
+}
+
 // ── 封面提取 ──
 
 /// 从音频文件中提取封面并返回 base64 data URL（兼容旧数据）
@@ -406,6 +417,7 @@ pub fn run() {
             scan_library_stream,
             cancel_scan,
             get_file_info,
+            delete_audio_file,
             update_audio_metadata,
             get_cover_data_url,
             get_embedded_lyrics,

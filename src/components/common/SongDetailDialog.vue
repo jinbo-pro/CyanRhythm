@@ -1,7 +1,13 @@
 <script setup>
 import { ref, watch } from 'vue'
-import { getFileInfo } from '@/api/index.js'
+import { getFileInfo, deleteAudioFile } from '@/api/index.js'
 import { formatTime } from '@/composables/usePlayer.js'
+import { confirmDelete, isCancelError } from '@/utils/common.js'
+import { useLibraryStore } from '@/stores/library.js'
+import { usePlaylistStore } from '@/stores/playlist.js'
+import { usePlayerStore } from '@/stores/player.js'
+
+const emit = defineEmits(['deleted'])
 
 const props = defineProps({
   /** 当前歌曲对象（需包含 fileRelPath、duration 等字段） */
@@ -13,6 +19,11 @@ const visible = defineModel({ type: Boolean, default: false })
 
 const detailLoading = ref(false)
 const detailInfo = ref(null)
+const deleting = ref(false)
+
+const library = useLibraryStore()
+const playlistStore = usePlaylistStore()
+const player = usePlayerStore()
 
 /** 格式化文件大小（B / KB / MB / GB） */
 function formatFileSize(bytes) {
@@ -34,6 +45,30 @@ function formatDuration(sec) {
   return formatTime(sec)
 }
 
+async function onDeleteFile() {
+  if (!props.song?.fileRelPath || deleting.value) return
+  const fileName = detailInfo.value?.fileName || props.song.title || props.song.fileRelPath
+  try {
+    await confirmDelete(
+      `确定删除文件「${fileName}」？此操作会从磁盘中删除文件，且不可恢复。`,
+      '删除文件'
+    )
+    deleting.value = true
+    player.forgetSong(props.song.id)
+    await deleteAudioFile(props.song.fileRelPath)
+    await library.removeSong(props.song.id)
+    await playlistStore.removeSongFromAll(props.song.id)
+    ElMessage.success('文件已删除')
+    visible.value = false
+    emit('deleted', props.song)
+  } catch (e) {
+    if (!isCancelError(e)) {
+      ElMessage.error('删除文件失败：' + (e?.message || e))
+    }
+  } finally {
+    deleting.value = false
+  }
+}
 // 弹窗打开时实时读取文件信息（点击触发，不在初始化时获取）
 watch(visible, async (open) => {
   if (!open || !props.song) return
@@ -100,7 +135,19 @@ watch(visible, async (open) => {
       />
     </div>
     <template #footer>
-      <el-button type="primary" @click="visible = false">关闭</el-button>
+      <div class="flex items-center justify-between gap-2">
+        <el-button
+          type="danger"
+          plain
+          :loading="deleting"
+          :disabled="!song || detailLoading"
+          @click="onDeleteFile"
+        >
+          <template #icon><el-icon><Delete /></el-icon></template>
+          删除文件
+        </el-button>
+        <el-button type="primary" @click="visible = false">关闭</el-button>
+      </div>
     </template>
   </el-dialog>
 </template>

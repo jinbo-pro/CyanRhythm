@@ -168,6 +168,14 @@ export const useLibraryStore = defineStore('library', {
         await this._persist()
       }
     },
+    /** 从媒体库移除单首歌曲记录 */
+    async removeSong(id) {
+      if (!id) return
+      const next = this.songs.filter((s) => s.id !== id)
+      if (next.length === this.songs.length) return
+      this.songs = next
+      await this._persist()
+    },
     /**
      * 替换指定目录的歌曲：先删除该目录下的旧歌曲，再合并新歌曲（按 id 去重）。
      * 用于「更新目录」——重新扫描后用新结果覆盖该目录的歌曲。

@@ -9,6 +9,7 @@ import { useSettingsStore } from '@/stores/settings.js'
 import { useTheme } from '@/composables/useTheme.js'
 import { useImport } from '@/composables/useImport.js'
 import { eventBus, EVENTS } from '@/utils/eventBus.js'
+import { confirmDelete } from '@/utils/common.js'
 
 const playlistStore = usePlaylistStore()
 const settingsStore = useSettingsStore()
@@ -48,11 +49,7 @@ async function onSubmit({ name, sort, icon }) {
 }
 
 async function removePlaylist(pl) {
-  await ElMessageBox.confirm(`确定删除播放列表「${pl.name}」？`, '删除确认', {
-    type: 'warning',
-    confirmButtonText: '删除',
-    cancelButtonText: '取消',
-  })
+  await confirmDelete(`确定删除播放列表「${pl.name}」？`, '删除确认')
   await playlistStore.remove(pl.id)
   if (router.currentRoute.value.params.id === pl.id) router.push('/songs')
 }

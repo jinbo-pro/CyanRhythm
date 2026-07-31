@@ -1,5 +1,6 @@
 <script setup>
 import { clearAllData } from '@/db/index.js'
+import { confirmAction, isCancelError } from '@/utils/common.js'
 
 /**
  * 清空所有数据（二次确认）
@@ -7,13 +8,12 @@ import { clearAllData } from '@/db/index.js'
  */
 async function onClear() {
   try {
-    await ElMessageBox.confirm(
+    await confirmAction(
       '此操作将清空所有歌曲、播放列表、配置和播放进度，且不可恢复，确定继续？',
       '清空所有数据',
       {
         type: 'error',
         confirmButtonText: '确认清空',
-        cancelButtonText: '取消',
         confirmButtonClass: 'el-button--danger',
       }
     )
@@ -21,7 +21,7 @@ async function onClear() {
     ElMessage.success('已清空所有数据，即将刷新页面...')
     setTimeout(() => location.reload(), 800)
   } catch (e) {
-    if (e !== 'cancel' && e?.toString() !== 'cancel') {
+    if (!isCancelError(e)) {
       ElMessage.error('清空失败：' + (e?.message || e))
     }
   }

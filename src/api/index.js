@@ -131,6 +131,14 @@ export async function getEmbeddedLyrics(filePath) {
 export function getFileInfo(filePath) {
   return invoke('get_file_info', { filePath })
 }
+/**
+ * 删除指定音频文件。
+ * @param {string} filePath 音频文件的绝对路径
+ * @returns {Promise<void>}
+ */
+export function deleteAudioFile(filePath) {
+  return invoke('delete_audio_file', { filePath })
+}
 
 // ═══════════════════════════════════════════════
 //  元数据编辑（写入标签）

@@ -144,6 +144,15 @@ export const usePlaylistStore = defineStore('playlist', {
       pl.songIds = pl.songIds.filter((sid) => sid !== songId)
       await this._persist(pl)
     },
+    /** 从所有播放列表中移除指定歌曲 */
+    async removeSongFromAll(songId) {
+      if (!songId) return
+      const changed = this.playlists.filter((pl) => pl.songIds.includes(songId))
+      for (const pl of changed) {
+        pl.songIds = pl.songIds.filter((sid) => sid !== songId)
+        await this._persist(pl)
+      }
+    },
     getPlaylist(id) {
       return this.playlists.find((p) => p.id === id)
     },

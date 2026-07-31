@@ -3,6 +3,7 @@ import { computed, ref } from 'vue'
 import { useImport } from '@/composables/useImport.js'
 import { useLibraryStore } from '@/stores/library.js'
 import { getBaseName } from '@/utils/path.js'
+import { confirmDelete, isCancelError } from '@/utils/common.js'
 import { formatTime } from '@/composables/usePlayer.js'
 import AlbumCover from './AlbumCover.vue'
 
@@ -182,21 +183,15 @@ function selectDir(dir) {
 // 删除目录及其歌曲（二次确认）
 async function onRemoveDir(dir) {
   try {
-    await ElMessageBox.confirm(
+    await confirmDelete(
       `确定删除目录「${getBaseName(dir) || dir}」及其下所有歌曲？此操作不可恢复。`,
-      '删除目录',
-      {
-        type: 'warning',
-        confirmButtonText: '删除',
-        cancelButtonText: '取消',
-        confirmButtonClass: 'el-button--danger',
-      }
+      '删除目录'
     )
     await library.removeScanDir(dir)
     if (selectedDir.value === dir) selectedDir.value = null
     ElMessage.success('已删除目录')
   } catch (e) {
-    if (e !== 'cancel' && e?.toString() !== 'cancel') {
+    if (!isCancelError(e)) {
       ElMessage.error('删除失败：' + (e?.message || e))
     }
   }

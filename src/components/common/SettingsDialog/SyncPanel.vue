@@ -14,6 +14,7 @@ import {
   deleteBackup,
   getCurrentUsername,
 } from '@/api/index.js'
+import { confirmAction, confirmDelete, isCancelError } from '@/utils/common.js'
 
 const props = defineProps({ open: Boolean })
 
@@ -139,10 +140,10 @@ async function onCredConfirm() {
       await loadBackupInfo()
     } else {
       // 同步前提示用户会覆盖本地数据
-      await ElMessageBox.confirm(
+      await confirmAction(
         '同步将用服务器数据覆盖本地全部歌曲和播放列表，是否继续？',
         '同步确认',
-        { type: 'warning', confirmButtonText: '同步', cancelButtonText: '取消' }
+        { confirmButtonText: '同步' }
       )
       const data = await downloadSync(username, password)
       if (!data || !Array.isArray(data.songs)) {
@@ -164,7 +165,7 @@ async function onCredConfirm() {
       setTimeout(() => location.reload(), 800)
     }
   } catch (e) {
-    if (e === 'cancel' || e?.toString() === 'cancel') return
+    if (isCancelError(e)) return
     ElMessage.error(
       (credMode.value === 'upload' ? '上传' : '同步') + '失败：' + (e?.message || e)
     )
@@ -181,21 +182,15 @@ async function onDeleteBackup() {
     return
   }
   try {
-    await ElMessageBox.confirm(
+    await confirmDelete(
       '确定删除当前用户的备份文件？此操作不可恢复。',
-      '删除备份',
-      {
-        type: 'warning',
-        confirmButtonText: '删除',
-        cancelButtonText: '取消',
-        confirmButtonClass: 'el-button--danger',
-      }
+      '删除备份'
     )
     await deleteBackup(saved.username)
     backupInfo.value = null
     ElMessage.success('备份已删除')
   } catch (e) {
-    if (e !== 'cancel' && e?.toString() !== 'cancel') {
+    if (!isCancelError(e)) {
       ElMessage.error('删除备份失败：' + (e?.message || e))
     }
   }

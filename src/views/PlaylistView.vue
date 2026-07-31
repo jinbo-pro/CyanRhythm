@@ -6,6 +6,7 @@ import { useLibraryStore } from '../stores/library.js'
 import { usePlayerStore } from '../stores/player.js'
 import SongTable from '../components/song/SongTable.vue'
 import PlaylistIcon from '../components/common/PlaylistIcon.vue'
+import { confirmDelete } from '@/utils/common.js'
 
 const route = useRoute()
 const router = useRouter()
@@ -32,10 +33,9 @@ async function removeSong(song) {
 
 async function removePlaylist() {
   if (!playlist.value) return
-  await ElMessageBox.confirm(
+  await confirmDelete(
     `确定删除播放列表「${playlist.value.name}」？`,
-    '删除确认',
-    { type: 'warning', confirmButtonText: '删除', cancelButtonText: '取消' }
+    '删除确认'
   )
   await playlistStore.remove(playlist.value.id)
   router.push('/songs')

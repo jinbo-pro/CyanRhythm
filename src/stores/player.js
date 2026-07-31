@@ -116,6 +116,28 @@ export const usePlayerStore = defineStore('player', {
       this._stopRaf()
     },
 
+    /** 歌曲被删除后同步清理当前播放状态和队列 */
+    forgetSong(songId) {
+      if (!songId) return
+      const isCurrent = this.currentSong && this.currentSong.id === songId
+      const oldIndex = this.queueIndex
+      this.queue = this.queue.filter((id) => id !== songId)
+      if (isCurrent) {
+        if (howl) {
+          howl.stop()
+          howl.unload()
+          howl = null
+        }
+        this._stopRaf()
+        this.currentSong = null
+        this.queueIndex = -1
+        this.isPlaying = false
+        this.seek = 0
+        this.duration = 0
+      } else if (oldIndex >= 0) {
+        this.queueIndex = Math.min(oldIndex, this.queue.length - 1)
+      }
+    },
     /** 跳转到指定秒数 */
     seekTo(seconds) {
       if (!howl) return

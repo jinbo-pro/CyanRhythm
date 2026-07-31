@@ -1,6 +1,6 @@
 [package]
 name = "CyanRhythm"
-version = "1.0.2"
+version = "1.0.3"
 description = "A Tauri App"
 authors = ["lijinbo <lijinbode@foxmail.com>"]
 edition = "2021"

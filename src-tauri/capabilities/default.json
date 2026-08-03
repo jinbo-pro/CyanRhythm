@@ -8,8 +8,6 @@
   "permissions": [
     "core:default",
     "opener:default",
-    "fs:default",
-    "global-shortcut:allow-register",
-    "global-shortcut:allow-unregister-all"
+    "fs:default"
   ]
 }

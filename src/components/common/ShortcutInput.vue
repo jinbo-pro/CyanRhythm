@@ -3,7 +3,7 @@ import { ref, onBeforeUnmount } from 'vue'
 import { keyEventToCombo, formatCombo } from '@/composables/useShortcuts.js'
 
 const props = defineProps({
-  // Tauri global-shortcut 格式字符串（如 'Space'、'Control+Right'）
+  // 标准组合键格式字符串（如 'Space'、'Control+Right'）
   modelValue: { type: String, default: '' },
 })
 const emit = defineEmits(['update:modelValue'])

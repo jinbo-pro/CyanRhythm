@@ -26,7 +26,7 @@ export const SHORTCUT_ACTIONS = {
 }
 
 /**
- * 将旧的 mousetrap 格式组合键迁移为 Tauri global-shortcut 格式
+ * 将旧的 mousetrap 格式组合键迁移为标准组合键格式
  * 例如：'ctrl+shift+p' => 'Control+Shift+P'，'space' => 'Space'
  * 对已是 Tauri 格式的组合键是幂等的（无副作用）
  */
@@ -60,7 +60,7 @@ export function migrateCombo(combo) {
     .join('+')
 }
 
-/** 快捷键默认绑定（Tauri global-shortcut 格式） */
+/** 快捷键默认绑定（标准组合键格式） */
 export const DEFAULT_SHORTCUTS = {
   [SHORTCUT_ACTIONS.PLAY_PAUSE]: 'Space',
   [SHORTCUT_ACTIONS.PREV]: 'Left',
@@ -90,7 +90,7 @@ export const useSettingsStore = defineStore('settings', {
     showFileName: false, // 是否显示文件名列
     pixelIcon: false, // 无封面时是否用名称生成像素图标
     waveformProgress: false, // 播放详情页是否使用波形热力图进度条
-    // 快捷键配置：动作 -> Tauri global-shortcut 格式（如 'Space'、'Control+Right'）
+    // 快捷键配置：动作 -> 标准组合键格式（如 'Space'、'Control+Right'）
     shortcuts: { ...DEFAULT_SHORTCUTS },
     // EQ 均衡器配置
     eqEnabled: false, // 是否启用 EQ
@@ -167,7 +167,7 @@ export const useSettingsStore = defineStore('settings', {
       const idx = order.indexOf(this.playMode)
       this.setPlayMode(order[(idx + 1) % order.length])
     },
-    /** 设置某个动作的快捷键（combo 为 Tauri global-shortcut 格式字符串） */
+    /** 设置某个动作的快捷键（combo 为标准组合键格式字符串） */
     setShortcut(action, combo) {
       this.shortcuts = { ...this.shortcuts, [action]: combo }
       this.persist()

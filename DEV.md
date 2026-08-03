@@ -54,7 +54,7 @@ tauri-local-music/
 | EQ 均衡器 | Web Audio `BiquadFilterNode` | 10 段实时增益调节 |
 | 状态管理 | `pinia` | 媒体库 / 播放器 / 播放列表 / 设置 / 统计 |
 | 图标 | `@element-plus/icons-vue` + 自定义 SVG | SVG 经 `vite-svg-loader` 以组件引入 |
-| 快捷键 | `@tauri-apps/plugin-global-shortcut` | Tauri 原生全局快捷键（替代 mousetrap） |
+| 快捷键 | 原生 DOM `keydown` | 应用内快捷键监听（仅窗口聚焦生效），复用 `keyEventToCombo` 解析组合键 |
 | 封面裁剪 | `cropperjs` | 元数据编辑器中的专辑封面裁剪 |
 | 像素图标 | `identicon.js` | 无封面歌曲生成像素图标 |
 | 实用工具 | `@vueuse/core` | 防抖、响应式工具函数 |

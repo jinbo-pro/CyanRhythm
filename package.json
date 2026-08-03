@@ -3,7 +3,7 @@
   "private": true,
   "author": "lijinbo <lijinbode@foxmail.com>",
   "license": "MIT",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "type": "module",
   "scripts": {
     "dev": "vite",
